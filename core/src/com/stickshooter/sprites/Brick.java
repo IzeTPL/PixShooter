@@ -4,7 +4,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.physics.box2d.World;
-import com.stickshooter.StickShooter;
+import com.stickshooter.PixShooter;
 import com.stickshooter.scenes.Hud;
 
 /**
@@ -16,7 +16,7 @@ public class Brick extends InteractiveTileObject{
 
         super(world, map, bounds);
         fixture.setUserData(this);
-        setCategoryFilter(StickShooter.BRICK_BIT);
+        setCategoryFilter(PixShooter.BRICK_BIT);
 
 
     }
@@ -25,7 +25,7 @@ public class Brick extends InteractiveTileObject{
     public void onHeadHit() {
 
         Gdx.app.log("Brick", "Collision");
-        setCategoryFilter(StickShooter.DESTROYED_BIT);
+        setCategoryFilter(PixShooter.DESTROYED_BIT);
         getCell().setTile(null);
         Hud.addScore(200);
 

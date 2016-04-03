@@ -20,7 +20,7 @@ import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.stickshooter.StickShooter;
+import com.stickshooter.PixShooter;
 import com.stickshooter.scenes.Hud;
 import com.stickshooter.scenes.PauseMenu;
 import com.stickshooter.sprites.Bullet;
@@ -38,7 +38,7 @@ import java.util.Date;
  */
 public class PlayScreen implements Screen {
 
-    private StickShooter game;
+    private PixShooter game;
     private TextureAtlas atlas;
     private boolean isPaused = false;
     private ShapeRenderer shapeRenderer;
@@ -64,22 +64,22 @@ public class PlayScreen implements Screen {
     private Box2DDebugRenderer b2dr;
 
     private Player player;
-    private ArrayList<Bullet> bullets;
 
     SimpleDateFormat simpleDateFormat;
 
 
-    public PlayScreen(StickShooter game) {
+    public PlayScreen(PixShooter game) {
 
         simpleDateFormat = new SimpleDateFormat ("E_yyyy.MM.dd_'at'_hh-mm-ss_a_zzz");
 
-        bullets = new ArrayList<Bullet>();
         shapeRenderer = new ShapeRenderer();
         atlas = new TextureAtlas("Mario_and_Enemies.pack");
 
         this.game = game;
         gamecam = new OrthographicCamera();
-        gameViewport = new FitViewport(StickShooter.V_WIDTH/StickShooter.PPM, StickShooter.V_HEIGHT/StickShooter.PPM, gamecam);
+
+        gameViewport = new FitViewport(PixShooter.downScale(PixShooter.V_WIDTH/PixShooter.SCALE), PixShooter.downScale(PixShooter.V_HEIGHT/PixShooter.SCALE), gamecam);
+
         hud = new Hud(game.batch);
         pauseMenu = new PauseMenu(game.batch, game.manager);
 
@@ -87,12 +87,12 @@ public class PlayScreen implements Screen {
         map = mapLoader.load("test.tmx");
         mapProperties = new MapProperties();
         mapProperties = map.getProperties();
-        renderer = new OrthogonalTiledMapRenderer(map, 1/StickShooter.PPM);
+        renderer = new OrthogonalTiledMapRenderer(map, 1f/PixShooter.PIXELS_PER_METER);
         gamecam.position.set(gameViewport.getWorldWidth()/2, gameViewport.getWorldHeight()/2, 0);
 
 
-        world = new World(new Vector2(0, -10), true);
-        player = new Player(world, this, bullets);
+        world = new World(new Vector2(0, -10f), true);
+        player = new Player(world, this, gamecam, gameViewport);
         b2dr = new Box2DDebugRenderer();
 
         new B2WorldCreator(world, map);
@@ -123,13 +123,13 @@ public class PlayScreen implements Screen {
 
             }
 
-            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player.body.getLinearVelocity().x <= 2) {
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player.body.getLinearVelocity().x <= 2f) {
 
                 player.body.applyLinearImpulse(new Vector2(0.1f, 0), player.body.getWorldCenter(), true);
 
             }
 
-            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player.body.getLinearVelocity().x >= -2) {
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player.body.getLinearVelocity().x >= -2f) {
 
                 player.body.applyLinearImpulse(new Vector2(-0.1f, 0), player.body.getWorldCenter(), true);
 
@@ -153,7 +153,7 @@ public class PlayScreen implements Screen {
 
         }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+        if (Gdx.input.justTouched()) {
 
             player.shoot();
 
@@ -195,30 +195,24 @@ public class PlayScreen implements Screen {
 
         player.update(dt);
         hud.update(dt);
-        debugOverlay.update(player);
+        debugOverlay.update(player, gameViewport, gamecam);
 
-        if (player.body.getPosition().x > (16f*(12.5f))/StickShooter.PPM && player.body.getPosition().x < (16*((float)mapProperties.get("width", Integer.class)-(12.5f))/StickShooter.PPM))
+        if (player.body.getPosition().x > gameViewport.getWorldWidth()/2f && player.body.getPosition().x < PixShooter.downScale(PixShooter.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldWidth()/2f)
             gamecam.position.x = player.body.getPosition().x;
 
-        if (player.body.getPosition().y > (16f*(7.5f))/StickShooter.PPM && player.body.getPosition().y < (16*((float)mapProperties.get("height", Integer.class)-(6.5f))/StickShooter.PPM))
+        if (player.body.getPosition().y > gameViewport.getWorldHeight()/2f && player.body.getPosition().y < PixShooter.downScale(PixShooter.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldHeight()/2f)
             gamecam.position.y = player.body.getPosition().y;
 
         gamecam.update();
         renderer.setView(gamecam);
 
-        for(int i = 0; i < bullets.size(); i++) {
-            bullets.get(i).update(dt);
-            if(bullets.get(i).shouldRemove()) {
-                bullets.get(i);
-                bullets.remove(i);
+        for(int i = 0; i < player.bullets.size(); i++) {
+            player.bullets.get(i).update(dt);
+            if(player.bullets.get(i).shouldRemove()) {
+                player.bullets.get(i).getWorld().destroyBody(player.bullets.get(i).body);
+                player.bullets.remove(i);
                 i--;
             }
-        }
-
-        for(int i = 0; i < bullets.size(); i++) {
-
-            bullets.get(i).update(dt);
-
         }
 
     }
@@ -238,14 +232,14 @@ public class PlayScreen implements Screen {
 
         game.batch.setProjectionMatrix(gamecam.combined);
         game.batch.begin();
-        player.draw(game.batch);
+        //player.draw(game.batch);
         game.batch.end();
 
         shapeRenderer.setProjectionMatrix(gamecam.combined);
-        shapeRenderer.setColor(1,1,1,1);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        for(int i = 0; i < bullets.size(); i++) {
-            shapeRenderer.circle(bullets.get(i).body.getPosition().x, bullets.get(i).body.getPosition().y, 300000000);
+        shapeRenderer.setColor(0, 1, 0, 1);
+        for(int i = 0; i < player.bullets.size(); i++) {
+            player.bullets.get(i).draw(gamecam.combined);
         }
         shapeRenderer.end();
 
@@ -258,16 +252,13 @@ public class PlayScreen implements Screen {
         game.batch.setProjectionMatrix(debugOverlay.stage.getCamera().combined);
         debugOverlay.stage.draw();
 
-        for(int i = 0; i < bullets.size(); i++) {
-            bullets.get(i).draw(shapeRenderer);
-        }
-
     }
 
     @Override
     public void resize(int width, int height) {
 
         gameViewport.update(width, height);
+        hud.stage.getViewport().update(width, height);
         pauseMenu.stage.getViewport().update(width, height);
         debugOverlay.stage.getViewport().update(width, height);
 

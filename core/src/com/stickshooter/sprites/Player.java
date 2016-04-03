@@ -1,12 +1,13 @@
 package com.stickshooter.sprites;
 
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.Array;
-import com.stickshooter.StickShooter;
+import com.badlogic.gdx.utils.viewport.Viewport;
+import com.stickshooter.PixShooter;
 import com.stickshooter.screens.PlayScreen;
 
 import java.util.ArrayList;
@@ -28,13 +29,17 @@ public class Player extends Sprite{
     private float stateTimer;
     private boolean runningRight;
 
-    private ArrayList<Bullet> bullets;
+    private OrthographicCamera orthographicCamera;
+    private Viewport viewport;
 
-    public Player(World world, PlayScreen screen, ArrayList<Bullet> bullets) {
+    public ArrayList<Bullet> bullets;
+
+    public Player(World world, PlayScreen screen, OrthographicCamera orthographicCamera , Viewport viewport) {
 
         super(screen.getAtlas().findRegion("little_mario"));
         this.world = world;
-        this.bullets = bullets;
+        this.orthographicCamera = orthographicCamera;
+        this.viewport = viewport;
 
         currentState = State.STANDING;
         previousState = State.STANDING;
@@ -42,6 +47,9 @@ public class Player extends Sprite{
         runningRight = true;
 
         Array<TextureRegion> frames = new Array<TextureRegion>();
+
+        bullets = new ArrayList<Bullet>();
+
         for(int i = 1; i < 4; i++) {
 
             frames.add(new TextureRegion(getTexture(), i * 16, 11, 16, 16));
@@ -62,7 +70,7 @@ public class Player extends Sprite{
 
         definePlayer();
         stickmanStand = new Sprite(getTexture(), 1, 11, 16, 16);
-        setBounds(0, 0, 16/StickShooter.PPM, 16/StickShooter.PPM);
+        setBounds(0, 0, PixShooter.downScale(16), PixShooter.downScale(16));
         setRegion(stickmanStand);
 
     }
@@ -129,30 +137,30 @@ public class Player extends Sprite{
     public void definePlayer() {
 
         BodyDef bdef = new BodyDef();
-        bdef.position.set(64/StickShooter.PPM, 32/StickShooter.PPM);
+        bdef.position.set(PixShooter.downScale(32 + 8), PixShooter.downScale(48 + 8));
         bdef.type = BodyDef.BodyType.DynamicBody;
         body = world.createBody(bdef);
 
         FixtureDef fdef = new FixtureDef();
         CircleShape shape = new CircleShape();
-        shape.setRadius(7/StickShooter.PPM);
-        fdef.filter.categoryBits = StickShooter.MARIO_BIT;
-        fdef.filter.maskBits = StickShooter.DEFAULT_BIT | StickShooter.COIN_BIT | StickShooter.BRICK_BIT;
+        shape.setRadius(PixShooter.downScale(PixShooter.TILE_SIZE / 2f));
+        //fdef.filter.categoryBits = PixShooter.MARIO_BIT;
+        //fdef.filter.maskBits = PixShooter.DEFAULT_BIT | PixShooter.COIN_BIT | PixShooter.BRICK_BIT;
 
         fdef.shape = shape;
         body.createFixture(fdef);
 
-        EdgeShape head = new EdgeShape();
-        head.set(new Vector2(-2/StickShooter.PPM, 7/StickShooter.PPM), new Vector2(2/StickShooter.PPM, 7/StickShooter.PPM));
-        fdef.shape = head;
-        fdef.isSensor = true;
+        //EdgeShape head = new EdgeShape();
+        //head.set(new Vector2(PixShooter.calculateScale(-2),PixShooter.calculateScale(7)), new Vector2(PixShooter.calculateScale(2), PixShooter.calculateScale(7)));
+        //fdef.shape = head;
+        //fdef.isSensor = true;
 
-        body.createFixture(fdef).setUserData("head");
+        //body.createFixture(fdef).setUserData("head");
     }
 
     public void shoot() {
 
-        bullets.add(new Bullet(world, this));
+        bullets.add(new Bullet(world, this, orthographicCamera, viewport));
 
     }
 

@@ -10,15 +10,18 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
 import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader;
 import com.stickshooter.screens.MainMenuScreen;
+import com.stickshooter.screens.PlayScreen;
 
 
-public class StickShooter extends Game {
+public class PixShooter extends Game {
 
     //podstawowe parametry gry
     public SpriteBatch batch;
-    public static final int V_WIDTH = 400;
-    public static final int V_HEIGHT = 208;
-    public static final float PPM = 100;
+    public static final int V_WIDTH = 1280;
+    public static final int V_HEIGHT = 720;
+    public static final float PIXELS_PER_METER = 100;
+    public static final float TILE_SIZE = 16;
+    public static final float SCALE = 4;
 
 
     //flagi bitowe
@@ -27,6 +30,7 @@ public class StickShooter extends Game {
     public static final short BRICK_BIT = 4;
     public static final short COIN_BIT = 8;
     public static final short DESTROYED_BIT = 16;
+    public static final short BULLET_BIT = 32;
 
     //fonty
     public AssetManager manager = new AssetManager();
@@ -43,7 +47,7 @@ public class StickShooter extends Game {
         manager.setLoader(FreeTypeFontGenerator.class, new FreeTypeFontGeneratorLoader(resolver));
         manager.setLoader(BitmapFont.class, ".ttf", new FreetypeFontLoader(resolver));
         batch = new SpriteBatch();
-        setScreen(new MainMenuScreen(this));
+        setScreen(new PlayScreen(this));
 
     }
 
@@ -58,5 +62,30 @@ public class StickShooter extends Game {
         batch.dispose();
 
     }
+
+    public static float upScale(float toScale) {
+
+        return toScale*PIXELS_PER_METER;
+
+    }
+
+    public static float downScale(float toScale) {
+
+        return toScale/PIXELS_PER_METER;
+
+    }
+
+    public static float setRange(float currentValue, float maxValue) {
+
+        return currentValue/maxValue;
+
+    }
+
+    public static float setRange(float currentValue, float maxValue, int range) {
+
+        return range*setRange(currentValue, range);
+
+    }
+
 }
 

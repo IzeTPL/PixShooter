@@ -17,7 +17,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Scaling;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.stickshooter.StickShooter;
+import com.stickshooter.PixShooter;
 import com.stickshooter.tools.FTFontGenerator;
 
 /**
@@ -25,7 +25,7 @@ import com.stickshooter.tools.FTFontGenerator;
  */
 public class GalleryScreen implements Screen {
 
-    private StickShooter game;
+    private PixShooter game;
 
     private OrthographicCamera gamecam;
     private Viewport gameViewport;
@@ -51,7 +51,7 @@ public class GalleryScreen implements Screen {
     private int index = 0;
 
 
-    public GalleryScreen(StickShooter game) {
+    public GalleryScreen(PixShooter game) {
 
         files = Gdx.files.external("Screenshots/").list();
 
@@ -81,12 +81,12 @@ public class GalleryScreen implements Screen {
 
         generator = new FTFontGenerator(game.manager);
         textButtonStyle = new TextButton.TextButtonStyle();
-        textButtonStyle.font = generator.generateFont(StickShooter.MENU_FONT, 75);
+        textButtonStyle.font = generator.generateFont(PixShooter.MENU_FONT, 75);
         textButtonStyle.fontColor = Color.WHITE;
         textButtonStyle.overFontColor = Color.RED;
 
         labelStyle = new Label.LabelStyle();
-        labelStyle.font = generator.generateFont(StickShooter.MENU_FONT, 100);
+        labelStyle.font = generator.generateFont(PixShooter.MENU_FONT, 100);
 
         leftStyle = new ImageButton.ImageButtonStyle();
         leftStyle.imageUp = new TextureRegionDrawable(new TextureRegion(left));

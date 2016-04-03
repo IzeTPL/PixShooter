@@ -18,7 +18,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.stickshooter.StickShooter;
+import com.stickshooter.PixShooter;
 import com.stickshooter.tools.FTFontGenerator;
 
 /**
@@ -63,19 +63,19 @@ public class PauseMenu implements Disposable{
         pixmap.fill();
 
 
-        viewport = new FitViewport(1280, 720, new OrthographicCamera());
+        viewport = new FitViewport(PixShooter.V_WIDTH, PixShooter.V_HEIGHT, new OrthographicCamera());
         stage = new Stage(viewport, sb);
 
         //generowanie fontu
         generator = new FTFontGenerator(manager);
 
         textButtonStyle = new TextButton.TextButtonStyle();
-        textButtonStyle.font = generator.generateFont(StickShooter.MENU_FONT, 75);
+        textButtonStyle.font = generator.generateFont(PixShooter.MENU_FONT, 75);
         textButtonStyle.fontColor = Color.WHITE;
         textButtonStyle.overFontColor = Color.RED;
 
         labelStyle = new Label.LabelStyle();
-        labelStyle.font = generator.generateFont(StickShooter.MENU_FONT, 100);
+        labelStyle.font = generator.generateFont(PixShooter.MENU_FONT, 100);
 
         //tworzenie przycisków
         playButton = new TextButton("RESUME", textButtonStyle);
@@ -150,4 +150,7 @@ public class PauseMenu implements Disposable{
     public TextButton getMainMenuButton() {
         return mainMenuButton;
     }
+
+
+
 }

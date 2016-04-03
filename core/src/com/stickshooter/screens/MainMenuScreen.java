@@ -12,7 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.stickshooter.StickShooter;
+import com.stickshooter.PixShooter;
 import com.stickshooter.tools.FTFontGenerator;
 
 /**
@@ -22,11 +22,9 @@ public class MainMenuScreen implements Screen {
 
     /*TODO:
     * -obsługa klawiatury
-    * -obsługa myszki
-    * -podswietlenie zaznaczenia
-    * */
+     */
 
-    private StickShooter game;
+    private PixShooter game;
 
     private OrthographicCamera gamecam;
     private Viewport gameViewport;
@@ -49,28 +47,28 @@ public class MainMenuScreen implements Screen {
 
 
 
-    public MainMenuScreen(StickShooter game) {
+    public MainMenuScreen(PixShooter game) {
 
         this.game = game;
 
         //kamera
         gamecam = new OrthographicCamera();
-        gameViewport = new FitViewport(1280, 720, gamecam);
+        gameViewport = new FitViewport(PixShooter.V_WIDTH, PixShooter.V_HEIGHT, gamecam);
         gamecam.position.set(gameViewport.getWorldWidth()/2, gameViewport.getWorldHeight()/2, 0);
 
         //generowanie fontu bitmap
         generator = new FTFontGenerator(game.manager);
 
         textButtonStyle = new TextButton.TextButtonStyle();
-        textButtonStyle.font = generator.generateFont(StickShooter.MENU_FONT, 75);
+        textButtonStyle.font = generator.generateFont(PixShooter.MENU_FONT, 75);
         textButtonStyle.fontColor = Color.WHITE;
         textButtonStyle.overFontColor = Color.RED;
 
         labelStyle = new Label.LabelStyle();
-        labelStyle.font = generator.generateFont(StickShooter.MENU_FONT, 100);
+        labelStyle.font = generator.generateFont(PixShooter.MENU_FONT, 100);
 
         authorStyle = new Label.LabelStyle();
-        authorStyle.font = generator.generateFont(StickShooter.SIGN_FONT, 45);
+        authorStyle.font = generator.generateFont(PixShooter.SIGN_FONT, 45);
 
         //tworzenie przycisków
         playButton = new TextButton("PLAY", textButtonStyle);
@@ -111,6 +109,7 @@ public class MainMenuScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
         playButton.addListener(new ClickListener());
         exitButton.addListener(new ClickListener());
+        optionsButton.addListener(new ClickListener());
 
 
 
@@ -136,6 +135,13 @@ public class MainMenuScreen implements Screen {
         if(playButton.isPressed()) {
 
             game.setScreen(new PlayScreen(game));
+            dispose();
+
+        }
+
+        if(optionsButton.isPressed()) {
+
+            game.setScreen(new OptionsScreen(game));
             dispose();
 
         }

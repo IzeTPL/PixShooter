@@ -5,7 +5,7 @@ import com.badlogic.gdx.maps.tiled.TiledMapTile;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.physics.box2d.*;
-import com.stickshooter.StickShooter;
+import com.stickshooter.PixShooter;
 
 /**
  * Created by Marian on 06.03.2016.
@@ -31,11 +31,14 @@ public abstract class InteractiveTileObject {
         PolygonShape shape = new PolygonShape();
 
         bdef.type = BodyDef.BodyType.StaticBody;
-        bdef.position.set((bounds.getX() + bounds.getWidth()/2)/ StickShooter.PPM, (bounds.getY() + bounds.getHeight()/2)/StickShooter.PPM);
+
+        bdef.position.set(PixShooter.downScale(bounds.getX() + bounds.getWidth()/2), PixShooter.downScale(bounds.getY() + bounds.getHeight()/2));
 
         body = world.createBody(bdef);
 
-        shape.setAsBox(bounds.getWidth()/2/StickShooter.PPM, bounds.getHeight()/2/StickShooter.PPM);
+
+        shape.setAsBox(PixShooter.downScale(bounds.getWidth()/2), PixShooter.downScale(bounds.getHeight()/2));
+
         fdef.shape = shape;
 
         fixture = body.createFixture(fdef);
@@ -54,7 +57,7 @@ public abstract class InteractiveTileObject {
     public TiledMapTileLayer.Cell getCell() {
 
         TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get(1);
-        return layer.getCell((int)(body.getPosition().x * StickShooter.PPM / 16), (int)(body.getPosition().y * StickShooter.PPM/16));
+        return layer.getCell((int)(body.getPosition().x / PixShooter.TILE_SIZE), (int)(body.getPosition().y / PixShooter.TILE_SIZE));
 
     }
 

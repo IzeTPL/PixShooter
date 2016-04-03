@@ -2,7 +2,7 @@ package com.stickshooter.desktop;
 
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
-import com.stickshooter.StickShooter;
+import com.stickshooter.PixShooter;
 
 public class DesktopLauncher {
 	public static void main (String[] arg) {
@@ -10,6 +10,7 @@ public class DesktopLauncher {
 		config.width = 1280;
 		config.height = 720;
 		config.fullscreen = false;
-		new LwjglApplication(new StickShooter(), config);
+		config.resizable = false;
+		new LwjglApplication(new PixShooter(), config);
 	}
 }

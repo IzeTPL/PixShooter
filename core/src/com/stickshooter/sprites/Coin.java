@@ -5,7 +5,7 @@ import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileSet;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.physics.box2d.World;
-import com.stickshooter.StickShooter;
+import com.stickshooter.PixShooter;
 import com.stickshooter.scenes.Hud;
 
 /**
@@ -21,7 +21,7 @@ public class Coin extends InteractiveTileObject{
         super(world, map, bounds);
         tileSet = map.getTileSets().getTileSet("tileset_gutter");
         fixture.setUserData(this);
-        setCategoryFilter(StickShooter.COIN_BIT);
+        setCategoryFilter(PixShooter.COIN_BIT);
 
     }
 
@@ -29,7 +29,7 @@ public class Coin extends InteractiveTileObject{
     public void onHeadHit() {
 
         Gdx.app.log("Coin", "Collision");
-        setCategoryFilter(StickShooter.DESTROYED_BIT);
+        setCategoryFilter(PixShooter.DESTROYED_BIT);
         getCell().setTile(tileSet.getTile(BLANK_COIN));
         Hud.addScore(400);
 
