@@ -29,7 +29,6 @@ public class Coin extends InteractiveTileObject{
     public void onHeadHit() {
 
         Gdx.app.log("Coin", "Collision");
-        setCategoryFilter(PixShooter.DESTROYED_BIT);
         getCell().setTile(tileSet.getTile(BLANK_COIN));
         Hud.addScore(400);
 

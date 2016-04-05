@@ -84,7 +84,7 @@ public class PlayScreen implements Screen {
         pauseMenu = new PauseMenu(game.batch, game.manager);
 
         mapLoader = new TmxMapLoader();
-        map = mapLoader.load("test.tmx");
+        map = mapLoader.load("level1.tmx");
         mapProperties = new MapProperties();
         mapProperties = map.getProperties();
         renderer = new OrthogonalTiledMapRenderer(map, 1f/PixShooter.PIXELS_PER_METER);
@@ -232,7 +232,7 @@ public class PlayScreen implements Screen {
 
         game.batch.setProjectionMatrix(gamecam.combined);
         game.batch.begin();
-        //player.draw(game.batch);
+        player.draw(game.batch);
         game.batch.end();
 
         shapeRenderer.setProjectionMatrix(gamecam.combined);

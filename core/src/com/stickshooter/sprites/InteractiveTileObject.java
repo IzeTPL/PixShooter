@@ -57,7 +57,7 @@ public abstract class InteractiveTileObject {
     public TiledMapTileLayer.Cell getCell() {
 
         TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get(1);
-        return layer.getCell((int)(body.getPosition().x / PixShooter.TILE_SIZE), (int)(body.getPosition().y / PixShooter.TILE_SIZE));
+        return layer.getCell((int)(body.getPosition().x * PixShooter.PIXELS_PER_METER/PixShooter.TILE_SIZE), (int)(body.getPosition().y * PixShooter.PIXELS_PER_METER/PixShooter.TILE_SIZE));
 
     }
 
