@@ -1,6 +1,8 @@
 package com.stickshooter;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Net;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.assets.loaders.FileHandleResolver;
 import com.badlogic.gdx.assets.loaders.resolvers.InternalFileHandleResolver;
@@ -9,14 +11,20 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
 import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader;
+import com.badlogic.gdx.net.ServerSocket;
+import com.badlogic.gdx.net.ServerSocketHints;
+import com.badlogic.gdx.net.Socket;
 import com.stickshooter.networking.Server;
-import com.stickshooter.screens.PlayScreen;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 
-public class PixShooter extends Game {
-
+/**
+ * Created by Marian on 10.04.2016.
+ */
+public class PixServer extends Game{
     //podstawowe parametry gry
-    public SpriteBatch batch;
     public static final int V_WIDTH = 1280;
     public static final int V_HEIGHT = 720;
     public static final float PIXELS_PER_METER = 100;
@@ -35,10 +43,8 @@ public class PixShooter extends Game {
     //fonty
     public AssetManager manager = new AssetManager();
     public static final String MENU_FONT = "Capture_it.ttf";
-    public static final String SIGN_FONT = "GreatVibes-Regular.ttf";
 
-    //Networking
-    private Server server;
+    public SpriteBatch batch;
 
     @Override
     public void create () {
@@ -47,7 +53,8 @@ public class PixShooter extends Game {
         manager.setLoader(FreeTypeFontGenerator.class, new FreeTypeFontGeneratorLoader(resolver));
         manager.setLoader(BitmapFont.class, ".ttf", new FreetypeFontLoader(resolver));
         batch = new SpriteBatch();
-        setScreen(new PlayScreen(this));
+
+        setScreen(new Server(this));
 
     }
 
@@ -59,7 +66,7 @@ public class PixShooter extends Game {
     @Override
     public void dispose() {
 
-        batch.dispose();
+        manager.dispose();
 
     }
 
@@ -86,6 +93,4 @@ public class PixShooter extends Game {
         return range*setRange(currentValue, range);
 
     }
-
 }
-

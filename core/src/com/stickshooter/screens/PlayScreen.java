@@ -21,16 +21,17 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.stickshooter.PixShooter;
+import com.stickshooter.networking.Client;
+import com.stickshooter.networking.FrameType;
 import com.stickshooter.scenes.Hud;
 import com.stickshooter.scenes.PauseMenu;
-import com.stickshooter.sprites.Bullet;
 import com.stickshooter.sprites.Player;
 import com.stickshooter.tools.B2WorldCreator;
 import com.stickshooter.tools.DebugOverlay;
 import com.stickshooter.tools.WorldContactListener;
 
+import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 
 /**
@@ -41,6 +42,7 @@ public class PlayScreen implements Screen {
     private PixShooter game;
     private TextureAtlas atlas;
     private boolean isPaused = false;
+    private boolean isMultiplayer = false;
     private ShapeRenderer shapeRenderer;
 
     //tworzenie screenshotów
@@ -64,9 +66,9 @@ public class PlayScreen implements Screen {
     private Box2DDebugRenderer b2dr;
 
     private Player player;
+    private Client client;
 
     SimpleDateFormat simpleDateFormat;
-
 
     public PlayScreen(PixShooter game) {
 
@@ -74,6 +76,8 @@ public class PlayScreen implements Screen {
 
         shapeRenderer = new ShapeRenderer();
         atlas = new TextureAtlas("Mario_and_Enemies.pack");
+
+        client = new Client();
 
         this.game = game;
         gamecam = new OrthographicCamera();
@@ -84,7 +88,7 @@ public class PlayScreen implements Screen {
         pauseMenu = new PauseMenu(game.batch, game.manager);
 
         mapLoader = new TmxMapLoader();
-        map = mapLoader.load("level1.tmx");
+        map = mapLoader.load("test.tmx");
         mapProperties = new MapProperties();
         mapProperties = map.getProperties();
         renderer = new OrthogonalTiledMapRenderer(map, 1f/PixShooter.PIXELS_PER_METER);
@@ -101,6 +105,7 @@ public class PlayScreen implements Screen {
 
         debugOverlay = new DebugOverlay(game.batch);
 
+        client.connect("Player");
 
     }
 
@@ -113,25 +118,28 @@ public class PlayScreen implements Screen {
 
     }
 
-    public void handleInput(float dt) {
+    public void handleInput(float dt) throws IOException{
 
         if(!isPaused) {
 
             if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && player.body.getLinearVelocity().y == 0) {
 
-                player.body.applyLinearImpulse(new Vector2(0, 4f), player.body.getWorldCenter(), true);
+                //player.body.applyLinearImpulse(new Vector2(0, 4f), player.body.getWorldCenter(), true);
+                client.jump();
 
             }
 
             if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player.body.getLinearVelocity().x <= 2f) {
 
-                player.body.applyLinearImpulse(new Vector2(0.1f, 0), player.body.getWorldCenter(), true);
+                //player.body.applyLinearImpulse(new Vector2(0.1f, 0), player.body.getWorldCenter(), true);
+                client.moveRight();
 
             }
 
             if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player.body.getLinearVelocity().x >= -2f) {
 
-                player.body.applyLinearImpulse(new Vector2(-0.1f, 0), player.body.getWorldCenter(), true);
+                //player.body.applyLinearImpulse(new Vector2(-0.1f, 0), player.body.getWorldCenter(), true);
+                client.moveLeft();
 
             }
 
@@ -145,17 +153,23 @@ public class PlayScreen implements Screen {
 
             }
 
+            if (Gdx.input.isKeyJustPressed(Input.Keys.T)) {
+
+                //client.testServer();
+
+            }
+
+            if (Gdx.input.justTouched()) {
+
+                player.shoot();
+
+            }
+
         }
 
         if (pauseMenu.getMainMenuButton().isPressed() && pauseMenu.isVisible()) {
 
             game.setScreen(new MainMenuScreen(game));
-
-        }
-
-        if (Gdx.input.justTouched()) {
-
-            player.shoot();
 
         }
 
@@ -167,7 +181,7 @@ public class PlayScreen implements Screen {
 
             if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) && !pauseMenu.isVisible()) {
 
-                pause();
+                if (!isMultiplayer) pause();
                 pauseMenu.show();
                 isPaused = true;
 
@@ -177,7 +191,7 @@ public class PlayScreen implements Screen {
 
             if ((pauseMenu.getPlayButton().isPressed() || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) && pauseMenu.isVisible()) {
 
-                resume();
+                if (!isMultiplayer) resume();
                 pauseMenu.hide();
                 isPaused = false;
 
@@ -186,12 +200,14 @@ public class PlayScreen implements Screen {
 
     }
 
-    public void update(float dt) {
+    public void update(float dt) throws IOException{
 
         handleInput(dt);
         toggleMenu(dt);
 
         world.step(1/60f, 6, 2);
+
+        player.body.setLinearVelocity(client.x, client.y);
 
         player.update(dt);
         hud.update(dt);
@@ -221,7 +237,11 @@ public class PlayScreen implements Screen {
     @Override
     public void render(float delta) {
 
-        update(delta);
+        try {
+            update(delta);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
