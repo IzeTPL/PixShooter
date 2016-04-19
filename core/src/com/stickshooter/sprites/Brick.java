@@ -32,4 +32,9 @@ public class Brick extends InteractiveTileObject{
 
     }
 
+    @Override
+    public void onBulletHit() {
+
+    }
+
 }

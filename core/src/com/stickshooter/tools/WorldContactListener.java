@@ -1,6 +1,7 @@
 package com.stickshooter.tools;
 
 import com.badlogic.gdx.physics.box2d.*;
+import com.stickshooter.networking.Bullet;
 import com.stickshooter.sprites.InteractiveTileObject;
 
 /**
@@ -23,7 +24,7 @@ public class WorldContactListener implements ContactListener{
 
             if(object.getUserData() instanceof InteractiveTileObject) {
 
-                ((InteractiveTileObject) object.getUserData()).onHeadHit();
+                ( (InteractiveTileObject)object.getUserData() ).onHeadHit();
 
             }
 
@@ -34,9 +35,9 @@ public class WorldContactListener implements ContactListener{
             Fixture bullet = fixA.getUserData() == "bullet" ? fixA : fixB;
             Fixture object = bullet == fixA ? fixB : fixA;
 
-            if(object.getUserData() instanceof InteractiveTileObject) {
+            if ( contact.isTouching() ) {
 
-                ((InteractiveTileObject) object.getUserData()).onHeadHit();
+                //( () ).remove();
 
             }
 

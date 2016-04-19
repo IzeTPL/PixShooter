@@ -1,7 +1,5 @@
 package com.stickshooter.sprites;
 
-import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -18,11 +16,12 @@ import java.util.ArrayList;
 /**
  * Created by Marian on 06.03.2016.
  */
-public class Player extends Sprite{
+public class Player{
 
     public enum State { FALLING, JUMPING, STANDING, RUNNING, KICKED, DEAD }
     public State currentState;
     public State previousState;
+
 
     public World world;
     public Body body;
@@ -31,18 +30,19 @@ public class Player extends Sprite{
     private Animation stickmanJump;
     private float stateTimer;
     private boolean runningRight;
+    public Sprite sprite;
 
     private OrthographicCamera orthographicCamera;
     private Viewport viewport;
 
     public ArrayList<Bullet> bullets;
 
-    public Player(World world, PlayScreen screen, OrthographicCamera orthographicCamera , Viewport viewport) {
+    public Player(PlayScreen screen) {
 
-        super(screen.getAtlas().findRegion("little_mario"));
-        this.world = world;
-        this.orthographicCamera = orthographicCamera;
-        this.viewport = viewport;
+        sprite = new Sprite(screen.getAtlas().findRegion("little_mario"));
+        this.world = screen.getWorld();
+        this.orthographicCamera = screen.getGamecam();
+        this.viewport = screen.getGameViewport();
 
         currentState = State.STANDING;
         previousState = State.STANDING;
@@ -55,7 +55,7 @@ public class Player extends Sprite{
 
         for(int i = 1; i < 4; i++) {
 
-            frames.add(new TextureRegion(getTexture(), i * 16, 11, 16, 16));
+            frames.add(new TextureRegion(sprite.getTexture(), i * 16, 11, 16, 16));
 
         }
 
@@ -64,7 +64,7 @@ public class Player extends Sprite{
 
         for(int i = 4; i < 6; i++) {
 
-            frames.add(new TextureRegion(getTexture(), i * 16, 11, 16, 16));
+            frames.add(new TextureRegion(sprite.getTexture(), i * 16, 11, 16, 16));
 
         }
 
@@ -72,16 +72,16 @@ public class Player extends Sprite{
 
 
         definePlayer();
-        stickmanStand = new Sprite(getTexture(), 1, 11, 16, 16);
-        setBounds(0, 0, PixShooter.downScale(16), PixShooter.downScale(16));
-        setRegion(stickmanStand);
+        stickmanStand = new Sprite(sprite.getTexture(), 1, 11, 16, 16);
+        sprite.setBounds(0, 0, PixShooter.downScale(16), PixShooter.downScale(16));
+        sprite.setRegion(stickmanStand);
 
     }
 
     public void update(float dt){
 
-        setPosition(body.getPosition().x - getWidth()/2, body.getPosition().y - getHeight()/2);
-        setRegion(getFrame(dt));
+        sprite.setPosition(body.getPosition().x - sprite.getWidth()/2, body.getPosition().y - sprite.getHeight()/2);
+        sprite.setRegion(getFrame(dt));
 
     }
 
@@ -163,8 +163,20 @@ public class Player extends Sprite{
 
     public void shoot() {
 
-        bullets.add(new Bullet(world, this, orthographicCamera, viewport));
+        bullets.add(new Bullet(this));
 
+    }
+
+    public World getWorld() {
+        return world;
+    }
+
+    public Viewport getViewport() {
+        return viewport;
+    }
+
+    public OrthographicCamera getOrthographicCamera() {
+        return orthographicCamera;
     }
 
 }

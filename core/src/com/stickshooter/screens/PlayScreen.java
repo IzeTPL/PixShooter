@@ -21,8 +21,8 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.stickshooter.PixShooter;
-import com.stickshooter.networking.Client;
 import com.stickshooter.networking.FrameType;
+import com.stickshooter.networking.MovementType;
 import com.stickshooter.scenes.Hud;
 import com.stickshooter.scenes.PauseMenu;
 import com.stickshooter.sprites.Player;
@@ -30,9 +30,16 @@ import com.stickshooter.tools.B2WorldCreator;
 import com.stickshooter.tools.DebugOverlay;
 import com.stickshooter.tools.WorldContactListener;
 
+import java.io.Closeable;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.net.Socket;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 
 /**
  * Created by Marian on 06.03.2016.
@@ -65,8 +72,9 @@ public class PlayScreen implements Screen {
     private World world;
     private Box2DDebugRenderer b2dr;
 
-    private Player player;
     private Client client;
+    private HashMap<Integer, Player> players;
+    private HashSet<Integer> iDs;
 
     SimpleDateFormat simpleDateFormat;
 
@@ -96,7 +104,10 @@ public class PlayScreen implements Screen {
 
 
         world = new World(new Vector2(0, -10f), true);
-        player = new Player(world, this, gamecam, gameViewport);
+
+        players = new HashMap<>();
+        iDs = new HashSet<>();
+
         b2dr = new Box2DDebugRenderer();
 
         new B2WorldCreator(world, map);
@@ -122,21 +133,21 @@ public class PlayScreen implements Screen {
 
         if(!isPaused) {
 
-            if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && player.body.getLinearVelocity().y == 0) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && players.get(client.userId).body.getLinearVelocity().y == 0) {
 
                 //player.body.applyLinearImpulse(new Vector2(0, 4f), player.body.getWorldCenter(), true);
                 client.jump();
 
             }
 
-            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player.body.getLinearVelocity().x <= 2f) {
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && players.get(client.userId).body.getLinearVelocity().x <= 2f) {
 
                 //player.body.applyLinearImpulse(new Vector2(0.1f, 0), player.body.getWorldCenter(), true);
                 client.moveRight();
 
             }
 
-            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player.body.getLinearVelocity().x >= -2f) {
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && players.get(client.userId).body.getLinearVelocity().x >= -2f) {
 
                 //player.body.applyLinearImpulse(new Vector2(-0.1f, 0), player.body.getWorldCenter(), true);
                 client.moveLeft();
@@ -153,15 +164,10 @@ public class PlayScreen implements Screen {
 
             }
 
-            if (Gdx.input.isKeyJustPressed(Input.Keys.T)) {
-
-                //client.testServer();
-
-            }
-
             if (Gdx.input.justTouched()) {
 
-                player.shoot();
+                client.shoot(new Vector2(PixShooter.downScale( (2 * (float)Gdx.input.getX() - (float)Gdx.graphics.getWidth() ) / (2 * PixShooter.SCALE) ) + ((gamecam.position.x - players.get(client.userId).body.getPosition().x) * ( (float)gameViewport.getScreenWidth() / PixShooter.V_WIDTH) ), PixShooter.downScale( ( (float)Gdx.graphics.getHeight() - 2 * (float)Gdx.input.getY() ) / (2 * PixShooter.SCALE) ) + ((gamecam.position.y - players.get(client.userId).body.getPosition().y) * ( (float)gameViewport.getScreenHeight() / PixShooter.V_HEIGHT) )).angle());
+                //player.shoot();
 
             }
 
@@ -207,29 +213,39 @@ public class PlayScreen implements Screen {
 
         world.step(1/60f, 6, 2);
 
-        player.body.setLinearVelocity(client.x, client.y);
+        if (!players.isEmpty() ) {
 
-        player.update(dt);
+            for (Integer iD : iDs) {
+
+                players.get(iD).body.setTransform(client.playersPosition.get(iD).x, client.playersPosition.get(iD).y, 0f);
+                players.get(iD).body.setLinearVelocity(client.playersVelocity.get(iD).x, client.playersVelocity.get(iD).y);
+                players.get(iD).update(dt);
+
+            }
+
+            if (players.get(client.userId).body.getPosition().x > gameViewport.getWorldWidth()/2f && players.get(client.userId).body.getPosition().x < PixShooter.downScale(PixShooter.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldWidth()/2f)
+                gamecam.position.x = players.get(client.userId).body.getPosition().x;
+
+            if (players.get(client.userId).body.getPosition().y > gameViewport.getWorldHeight()/2f && players.get(client.userId).body.getPosition().y < PixShooter.downScale(PixShooter.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldHeight()/2f)
+                gamecam.position.y = players.get(client.userId).body.getPosition().y;
+
+            debugOverlay.update(players.get(client.userId), gameViewport, gamecam);
+
+            //for(int i = 0; i < player.bullets.size(); i++) {
+            //    player.bullets.get(i).update(dt);
+            //    if(player.bullets.get(i).shouldRemove()) {
+            //        player.bullets.get(i).getWorld().destroyBody(player.bullets.get(i).body);
+            //        player.bullets.remove(i);
+            //        i--;
+            //    }
+            //}
+
+        }
+
         hud.update(dt);
-        debugOverlay.update(player, gameViewport, gamecam);
-
-        if (player.body.getPosition().x > gameViewport.getWorldWidth()/2f && player.body.getPosition().x < PixShooter.downScale(PixShooter.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldWidth()/2f)
-            gamecam.position.x = player.body.getPosition().x;
-
-        if (player.body.getPosition().y > gameViewport.getWorldHeight()/2f && player.body.getPosition().y < PixShooter.downScale(PixShooter.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldHeight()/2f)
-            gamecam.position.y = player.body.getPosition().y;
 
         gamecam.update();
         renderer.setView(gamecam);
-
-        for(int i = 0; i < player.bullets.size(); i++) {
-            player.bullets.get(i).update(dt);
-            if(player.bullets.get(i).shouldRemove()) {
-                player.bullets.get(i).getWorld().destroyBody(player.bullets.get(i).body);
-                player.bullets.remove(i);
-                i--;
-            }
-        }
 
     }
 
@@ -238,9 +254,13 @@ public class PlayScreen implements Screen {
     public void render(float delta) {
 
         try {
+
             update(delta);
+
         } catch (IOException e) {
+
             e.printStackTrace();
+
         }
 
         Gdx.gl.glClearColor(0, 0, 0, 1);
@@ -252,19 +272,31 @@ public class PlayScreen implements Screen {
 
         game.batch.setProjectionMatrix(gamecam.combined);
         game.batch.begin();
-        player.draw(game.batch);
+
+        if(!players.isEmpty() ) {
+
+            for (Integer iD : iDs) {
+
+                players.get(iD).sprite.draw(game.batch);
+
+            }
+
+        }
+
         game.batch.end();
 
         shapeRenderer.setProjectionMatrix(gamecam.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0, 1, 0, 1);
-        for(int i = 0; i < player.bullets.size(); i++) {
-            player.bullets.get(i).draw(gamecam.combined);
-        }
+
+        //for(int i = 0; i < player.bullets.size(); i++) {
+        //    player.bullets.get(i).draw(gamecam.combined);
+        //}
+
         shapeRenderer.end();
 
         game.batch.setProjectionMatrix(hud.stage.getCamera().combined);
-        hud.stage.draw();
+        //hud.stage.draw();
         game.batch.setProjectionMatrix(pauseMenu.stage.getCamera().combined);
         pauseMenu.stage.act();
         pauseMenu.stage.draw();
@@ -286,12 +318,12 @@ public class PlayScreen implements Screen {
 
     @Override
     public void pause() {
-        player.body.setActive(false);
+        players.get(client.userId).body.setActive(false);
     }
 
     @Override
     public void resume() {
-        player.body.setActive(true);
+        players.get(client.userId).body.setActive(true);
     }
 
     @Override
@@ -309,6 +341,283 @@ public class PlayScreen implements Screen {
         hud.dispose();
         pauseMenu.dispose();
         debugOverlay.dispose();
+
+    }
+
+    public World getWorld() {
+        return world;
+    }
+
+    public OrthographicCamera getGamecam() {
+        return gamecam;
+    }
+
+    public Viewport getGameViewport() {
+        return gameViewport;
+    }
+
+    private class Client{
+
+        public HashMap<Integer, Vector2> playersPosition;
+        public HashMap<Integer, Vector2> playersVelocity;
+
+        private DataInputStream dataInputStream;
+        private DataOutputStream dataOutputStream;
+
+        private Socket socket = null;
+
+        private boolean connected = false;
+        private boolean looped = false;
+
+        private int userId;
+        private String userLogin;
+        private Thread thread = null;
+        private Object locker = new Object();
+
+        public boolean connect(String login) {
+
+            if (this.connected) {
+
+                return false;
+
+            }
+
+            try {
+
+                socket = new Socket("localhost", 1337);
+
+                dataInputStream = new DataInputStream(socket.getInputStream());
+                dataOutputStream = new DataOutputStream(socket.getOutputStream());
+
+                dataOutputStream.writeByte(FrameType.LOGIN);
+
+                if (dataInputStream.readBoolean() ) {
+
+                    userId = dataInputStream.readInt();
+                    iDs.add(userId);
+
+                    int size = dataInputStream.readInt();
+
+                    for(int i = 0; i < size; i++) {
+
+                        int iD = dataInputStream.readInt();
+                        iDs.add(iD);
+                        players.put(iD, new Player(PlayScreen.this) );
+
+                    }
+
+                    connected = true;
+                    looped = true;
+
+                    runThread();
+
+                    return true;
+
+                } else {
+
+                    closeObjects();
+
+                }
+
+            } catch (IOException e) {
+
+                e.printStackTrace();
+
+            }
+
+            return false;
+
+        }
+
+        private void runThread() {
+
+            thread = new Thread( () -> {
+
+                boolean error = false;
+
+                try {
+
+                    while ( looped || true ) {
+
+                        interpretFrame();
+
+                    }
+
+                } catch (Exception e) {
+
+                    error = true;
+
+                } finally {
+
+                    closeObjects();
+                    looped = false;
+                    connected = false;
+
+                }
+
+            });
+
+            thread.setName("Client-logic-thread");
+            thread.start();
+
+        }
+
+        private void interpretFrame() throws Exception {
+
+            int frameType = dataInputStream.readByte();
+
+            switch (frameType) {
+
+                case FrameType.SYNCHRONIZE:
+                    interpretSynchronize();
+                    break;
+
+                case FrameType.LOGIN:
+                    interpretLogin();
+                    break;
+
+                case FrameType.NEW_PLAYER:
+                    interpretNewPlayer();
+                    break;
+
+                default:
+                    break;
+
+            }
+
+        }
+
+        private void interpretSynchronize() throws Exception{
+
+            synchronized (locker) {
+
+                HashMap<Integer, Vector2> playersPosition = new HashMap<>();
+                HashMap<Integer, Vector2> playersVelocity = new HashMap<>();
+
+                for(int i = 0; i < players.size(); i++) {
+
+                    int iD = dataInputStream.readInt();
+                    Vector2 position = new Vector2();
+                    Vector2 velocity = new Vector2();
+
+                    position.x = dataInputStream.readFloat();
+                    position.y = dataInputStream.readFloat();
+                    playersPosition.put(iD, position);
+
+                    velocity.x = dataInputStream.readFloat();
+                    velocity.y = dataInputStream.readFloat();
+                    playersVelocity.put(iD, velocity);
+
+                }
+
+                this.playersPosition = playersPosition;
+                this.playersVelocity = playersVelocity;
+
+            }
+
+        }
+
+        private void interpretLogin() throws IOException {
+
+            synchronized (locker) {
+
+                int size = dataInputStream.readInt();
+
+                for(int i = 0; i < size; i++) {
+
+                    int iD = dataInputStream.readInt();
+                    iDs.add(iD);
+                    players.put(iD, new Player(PlayScreen.this) );
+
+                }
+
+            }
+        }
+
+        private void interpretNewPlayer() throws IOException {
+
+            synchronized (locker) {
+
+                int iD = dataInputStream.readInt();
+                iDs.add(iD);
+                players.put(iD, new Player(PlayScreen.this) );
+
+            }
+
+        }
+
+        public void jump() throws IOException{
+
+            synchronized (locker) {
+
+                dataOutputStream.writeByte(FrameType.MOVE);
+                dataOutputStream.writeByte(MovementType.JUMP);
+
+            }
+
+        }
+
+        public void moveRight() throws IOException{
+
+            synchronized (locker) {
+
+                dataOutputStream.writeByte(FrameType.MOVE);
+                dataOutputStream.writeByte(MovementType.RIGHT);
+
+            }
+
+        }
+
+        public void moveLeft() throws IOException{
+
+            synchronized (locker) {
+
+                dataOutputStream.writeByte(FrameType.MOVE);
+                dataOutputStream.writeByte(MovementType.LEFT);
+
+            }
+
+        }
+
+        public void shoot(float degrees) throws  IOException {
+
+            synchronized (locker) {
+
+                dataOutputStream.writeByte(FrameType.SHOOT);
+                dataOutputStream.writeFloat(degrees);
+
+            }
+
+        }
+
+        private synchronized void closeObjects()
+        {
+
+            closeObject(dataOutputStream);
+            closeObject(dataInputStream);
+
+        }
+
+        private boolean closeObject( Closeable object ) {
+
+            if (object == null) {
+
+                return false;
+
+            }
+
+            try {
+
+                    object.close();
+                    return true;
+
+            } catch (IOException e) {
+
+                    return false;
+
+            }
+
+        }
 
     }
 

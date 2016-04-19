@@ -1,16 +1,10 @@
 package com.stickshooter.networking;
 
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.Animation;
-import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.Viewport;
 import com.stickshooter.PixShooter;
-import com.stickshooter.screens.PlayScreen;
-import com.stickshooter.sprites.Bullet;
 
 import java.util.ArrayList;
 
@@ -19,34 +13,24 @@ import java.util.ArrayList;
  */
 public class Player{
 
-    public enum State { FALLING, JUMPING, STANDING, RUNNING, KICKED, DEAD }
-    public State currentState;
-    public State previousState;
-
     public World world;
     public Body body;
     public String login;
-
-    private float stateTimer;
-    private boolean runningRight;
+    public Server server;
+    public int ID;
 
     private OrthographicCamera orthographicCamera;
     private Viewport viewport;
 
     public ArrayList<Bullet> bullets;
 
-    public Player(World world, Server screen, OrthographicCamera orthographicCamera , Viewport viewport) {
+    public Player(Server server, int ID) {
 
-        this.world = world;
-        this.orthographicCamera = orthographicCamera;
-        this.viewport = viewport;
-
-        currentState = State.STANDING;
-        previousState = State.STANDING;
-        stateTimer = 0;
-        runningRight = true;
-
-        Array<TextureRegion> frames = new Array<TextureRegion>();
+        this.server = server;
+        this.world = server.getWorld();
+        this.orthographicCamera = server.getOrthographicCamera();
+        this.viewport = server.getViewport();
+        this.ID = ID;
 
         bullets = new ArrayList<Bullet>();
 
@@ -78,12 +62,6 @@ public class Player{
         body.createFixture(fdef).setUserData("head");
     }
 
-    public void shoot() {
-
-        //bullets.add(new Bullet(world, this, orthographicCamera, viewport));
-
-    }
-
     public void move( int movementType )
     {
         switch ( movementType )
@@ -99,6 +77,24 @@ public class Player{
                 break;
 
         }
+    }
+
+    public void shoot() {
+
+
+
+    }
+
+    public World getWorld() {
+        return world;
+    }
+
+    public Viewport getViewport() {
+        return viewport;
+    }
+
+    public OrthographicCamera getOrthographicCamera() {
+        return orthographicCamera;
     }
 
 }

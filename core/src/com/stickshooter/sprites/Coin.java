@@ -34,4 +34,9 @@ public class Coin extends InteractiveTileObject{
 
     }
 
+    @Override
+    public void onBulletHit() {
+
+    }
+
 }
