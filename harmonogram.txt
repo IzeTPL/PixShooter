@@ -1,38 +1,39 @@
 1. Okienka: Swing, SWT lub OpenGL
-- konfiguracja startowa projektu - GOTOWE 15.03.2016 -------------------------------
-- wyświetlenie prostej grafiki w postaci testowego poziomu - GOTOWE 15.03.2016 ------------------------
-- utworzenie poziomu za pomocą tileset - GOTOWE 15.03.2016 -------------------------
-- utworzenie animacji za pomocą spriteset - GOTOWE 5.05.2016 --------------------------
-- utworzenie menu glownego, opcji - GOTOWE 15.03.2016 ------------------------
+- konfiguracja startowa projektu GOTOWE 15.03.2016 ----------------------------
+- wyświetlenie prostej grafiki w postaci testowego poziomu GOTOWE 15.03.2016 ------------------------
+- utworzenie poziomu za pomocą tileset GOTOWE 15.03.2016 -------------------------
+- utworzenie animacji za pomocą spriteset GOTOWE 15.03.2016 --------------------------
+- utworzenie menu glownego, opcji GOTOWE 15.03.2016 ------------------------
 
 
 2. Zapis i odczyt plików,
-- zapis zrzutów ekranów - GOTOWE 22.03.2016 ------------------------
-TODO:- zapis automatyczny zrzutów erkanów podczas osignieć
-- odczyt zrzutów ekranu - GOTOWE 22.03.2016 ------------------------------
-- utworzenie wbudowanej galerii zrzutów ekranu - GOTOWE 22.03.2016 ------------------------------
-TODO:- zapisywanie konfiguracji mapy
+- zapis zrzutów ekranów GOTOWE 22.03.2016 ------------------------
+TODO:- zapis automatyczny zrzutu ekranu podczas osiągnięć
+- odczyt zrzutów ekranu GOTOWE 22.03.2016 ------------------------------
+- utworzenie wbudowanej galerii zrzutów ekranu GOTOWE 22.03.2016 ------------------------------
+- zapisywanie konfiguracji mapy GOTOWE 15.03.2016 --------------------------
 TODO:- zapisywanie stanu gry
 
 
 3. Współbieżność: wątki, operacje atomowe, itp.
 - wydzielenie odpowiednich wątków w zależności od potrzeb GOTOWE 19.04.2016 ---------------------------------
-- wtek, który akceptuje oraz watek ktory pracuje dla konkretnego uzytkownika - funkcja stopserwer - wyslanie klientowi, ze zakonczylismy gre GOTOWE 19.04.2016 -----------------------------
+- wtek, który akceptuje oraz watek ktory pracuje dla konkretnego uzytkownika GOTOWE 19.04.2016 -----------------------------
+TODO:- funkcja stopserwer - wyslanie klientowi, ze zakonczylismy gre
 - watek klienta, ktory kontroluje w aplikacji odbierane dane i moze zostac przerwany w bezpieczny sposob GOTOWE 19.04.2016 ------------------------------
-TODO:- klasa z zestawami komunikatow
+- klasa z zestawami komunikatow
 
 
 4. Bazy danych : ORM (np. Hibernate) lub JDBC dla: MySQL, PostgreSQL lub SQLite,
-TODO:- utworzenie bazy danych 4 tabele JDBC, CRUD
-TODO:- umożliwienie zapisu w bazie danych tablicy najlepszych wyników, logika autoryzacji
-TODO:- klasa do validacji i regexy
-TODO:- synchronizacja z sieciowa bazą danych
+- utworzenie bazy danych 4 tabele JDBC, CRUD GOTOWE 25.04.2016 --------------------------------
+TODO:- umożliwienie zapisu w bazie danych tablicy najlepszych wyników
+- logika autoryzacji GOTOWE 25.04.2016 --------------------------------
+- klasa do validacji i regexy GOTOWE 25.04.2016 --------------------------------
+- połączenie z sieciowa bazą danych GOTOWE 25.04.2016 --------------------------------
 
 
 5. Komunikacja sieciowa: sockety lub RMI,
-- umożliwienie nawiązania połączenia w oparciu o sockety GOTOWE 12.04.2016
-TODO:- przechowywanie adresu do bazy danych, na jakim porcie, adres serwera
-- rozdzielenie trybu działania aplikacji na klient i serwer GOTOWE 12.04.2016
+- umożliwienie nawiązania połączenia w oparciu o sockety GOTOWE 12.04.2016 --------------------------------
+- rozdzielenie trybu działania aplikacji na klient i serwer GOTOWE 12.04.2016 --------------------------------------
 - socket serwer(klient wysyla, serwer obsluguje u innego klienta pojawia sie to jako zdarzenie GOTOWE 12.04.2016 ---------------------------
 - logika klienta GOTOWE 12.04.2016 ---------------------------
 - protokol komunikacji GOTOWE 12.04.2016 ------------------------------
@@ -41,9 +42,9 @@ TODO:- przechowywanie adresu do bazy danych, na jakim porcie, adres serwera
 
 
 6. Zaproponowane przez studenta (np. wzorce projektowe).
-- zaprogramowanie detekcji kolizji GOTOWE 5.05.2016 ---------------------------------------
-TODO: - podstawowe algorytmy sztucznej inteligecji np pathfinding
+- zaprogramowanie detekcji kolizji GOTOWE 5.04.2016 ---------------------------------------
+TODO:- podstawowe algorytmy sztucznej inteligecji np pathfinding
 TODO:- dodanie obsługi konkrolera gier
 TODO:- czas rundy
-- synchronizacja kamery z graczem, skalowalność okna oraz wykrycie krawędzi mapy GOTOWE 5.05.2016 ---------------------------
-- utworzenie logiki obsługi myszy - wystrzeliwanie pocisków w kierunku kursora GOTOWE 5.05.2016 -----------------------------
+- synchronizacja kamery z graczem, skalowalność okna oraz wykrycie krawędzi mapy GOTOWE 5.04.2016 ---------------------------
+- utworzenie logiki obsługi myszy - wystrzeliwanie pocisków w kierunku kursora GOTOWE 5.04.2016 -----------------------------

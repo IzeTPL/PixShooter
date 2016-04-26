@@ -526,8 +526,8 @@ public class PlayScreen implements Screen {
                 for(int i = 0; i < size; i++) {
 
                     int iD = dataInputStream.readInt();
-                    iDs.add(iD);
                     players.put(iD, new Player(PlayScreen.this) );
+                    iDs.add(iD);
 
                 }
 
@@ -539,8 +539,9 @@ public class PlayScreen implements Screen {
             synchronized (locker) {
 
                 int iD = dataInputStream.readInt();
-                iDs.add(iD);
                 players.put(iD, new Player(PlayScreen.this) );
+                iDs.add(iD);
+
 
             }
 

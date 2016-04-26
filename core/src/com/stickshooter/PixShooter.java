@@ -10,6 +10,7 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
 import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader;
 import com.stickshooter.networking.Server;
+import com.stickshooter.screens.LoginScreen;
 import com.stickshooter.screens.PlayScreen;
 
 
@@ -47,7 +48,8 @@ public class PixShooter extends Game {
         manager.setLoader(FreeTypeFontGenerator.class, new FreeTypeFontGeneratorLoader(resolver));
         manager.setLoader(BitmapFont.class, ".ttf", new FreetypeFontLoader(resolver));
         batch = new SpriteBatch();
-        setScreen(new PlayScreen(this));
+        //setScreen(new PlayScreen(this));
+        setScreen(new LoginScreen(this));
 
     }
 
