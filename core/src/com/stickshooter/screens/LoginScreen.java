@@ -2,7 +2,9 @@ package com.stickshooter.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.*;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -12,18 +14,18 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.stickshooter.PixShooter;
-import com.stickshooter.database.PatternMatcher;
+import com.stickshooter.PixClient;
 import com.stickshooter.database.DatabaseClient;
-import com.stickshooter.tools.FTFontGenerator;
+import com.stickshooter.database.PatternMatcher;
 import com.stickshooter.tools.DrawableColor;
+import com.stickshooter.tools.FTFontGenerator;
 
 /**
  * Created by Marian on 25.04.2016.
  */
 public class LoginScreen implements Screen {
 
-    private PixShooter game;
+    private PixClient game;
     private DatabaseClient databaseClient;
 
     private OrthographicCamera gamecam;
@@ -64,7 +66,7 @@ public class LoginScreen implements Screen {
 
 
 
-    public LoginScreen(PixShooter game) {
+    public LoginScreen(PixClient game) {
 
         this.game = game;
         patternMatcher = new PatternMatcher();
@@ -72,14 +74,14 @@ public class LoginScreen implements Screen {
 
         //kamera
         gamecam = new OrthographicCamera();
-        gameViewport = new FitViewport(PixShooter.V_WIDTH, PixShooter.V_HEIGHT, gamecam);
+        gameViewport = new FitViewport(PixClient.V_WIDTH, PixClient.V_HEIGHT, gamecam);
         gamecam.position.set(gameViewport.getWorldWidth()/2, gameViewport.getWorldHeight()/2, 0);
 
         //generowanie fontu bitmap
         generator = new FTFontGenerator(game.manager);
 
         textButtonStyle = new TextButton.TextButtonStyle();
-        textButtonStyle.font = generator.generateFont(PixShooter.MENU_FONT, 75);
+        textButtonStyle.font = generator.generateFont(PixClient.MENU_FONT, 75);
         textButtonStyle.fontColor = Color.WHITE;
         textButtonStyle.overFontColor = Color.RED;
 
@@ -99,7 +101,7 @@ public class LoginScreen implements Screen {
         greenFieldStyle.background = DrawableColor.getColor(Color.GREEN);
 
         labelStyle = new Label.LabelStyle();
-        labelStyle.font = generator.generateFont(PixShooter.MENU_FONT, 50);
+        labelStyle.font = generator.generateFont(PixClient.MENU_FONT, 50);
         labelStyle.fontColor = Color.WHITE;
 
         resultStyle = new Label.LabelStyle();

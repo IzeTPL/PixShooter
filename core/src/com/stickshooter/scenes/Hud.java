@@ -10,7 +10,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.stickshooter.PixShooter;
+import com.stickshooter.PixClient;
 
 /**
  * Created by Marian on 06.03.2016.
@@ -39,7 +39,7 @@ public class Hud implements Disposable{
         timeCount = 0;
         score = 0;
 
-        viewport = new FitViewport(PixShooter.V_WIDTH, PixShooter.V_HEIGHT, new OrthographicCamera());
+        viewport = new FitViewport(PixClient.V_WIDTH, PixClient.V_HEIGHT, new OrthographicCamera());
 
         stage = new Stage(viewport, sb);
 

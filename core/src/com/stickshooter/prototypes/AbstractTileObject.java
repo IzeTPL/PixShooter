@@ -1,16 +1,16 @@
-package com.stickshooter.sprites;
+package com.stickshooter.prototypes;
 
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTile;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.physics.box2d.*;
-import com.stickshooter.PixShooter;
+import com.stickshooter.PixClient;
 
 /**
  * Created by Marian on 06.03.2016.
  */
-public abstract class InteractiveTileObject {
+public abstract class AbstractTileObject {
 
     protected World world;
     protected TiledMap map;
@@ -20,7 +20,7 @@ public abstract class InteractiveTileObject {
     protected Fixture fixture;
 
 
-    public InteractiveTileObject(World world, TiledMap map, Rectangle bounds) {
+    public AbstractTileObject(World world, TiledMap map, Rectangle bounds) {
 
         this.world = world;
         this.map = map;
@@ -32,12 +32,12 @@ public abstract class InteractiveTileObject {
 
         bdef.type = BodyDef.BodyType.StaticBody;
 
-        bdef.position.set(PixShooter.downScale(bounds.getX() + bounds.getWidth()/2), PixShooter.downScale(bounds.getY() + bounds.getHeight()/2));
+        bdef.position.set(PixClient.downScale(bounds.getX() + bounds.getWidth()/2), PixClient.downScale(bounds.getY() + bounds.getHeight()/2));
 
         body = world.createBody(bdef);
 
 
-        shape.setAsBox(PixShooter.downScale(bounds.getWidth()/2), PixShooter.downScale(bounds.getHeight()/2));
+        shape.setAsBox(PixClient.downScale(bounds.getWidth()/2), PixClient.downScale(bounds.getHeight()/2));
 
         fdef.shape = shape;
 
@@ -58,7 +58,7 @@ public abstract class InteractiveTileObject {
     public TiledMapTileLayer.Cell getCell() {
 
         TiledMapTileLayer layer = (TiledMapTileLayer) map.getLayers().get(1);
-        return layer.getCell((int)(body.getPosition().x * PixShooter.PIXELS_PER_METER/PixShooter.TILE_SIZE), (int)(body.getPosition().y * PixShooter.PIXELS_PER_METER/PixShooter.TILE_SIZE));
+        return layer.getCell((int)(body.getPosition().x * PixClient.PIXELS_PER_METER/ PixClient.TILE_SIZE), (int)(body.getPosition().y * PixClient.PIXELS_PER_METER/ PixClient.TILE_SIZE));
 
     }
 

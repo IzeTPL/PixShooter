@@ -2,33 +2,24 @@ package com.stickshooter.screens;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.PixmapIO;
+import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.maps.MapProperties;
-import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.badlogic.gdx.maps.tiled.TmxMapLoader;
-import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
-import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.Viewport;
-import com.stickshooter.PixShooter;
+import com.stickshooter.AbstractGame;
+import com.stickshooter.PixClient;
 import com.stickshooter.networking.FrameType;
 import com.stickshooter.networking.MovementType;
+import com.stickshooter.prototypes.AbstractPlayScreen;
 import com.stickshooter.scenes.Hud;
 import com.stickshooter.scenes.PauseMenu;
+import com.stickshooter.sprites.Bullet;
 import com.stickshooter.sprites.Player;
-import com.stickshooter.tools.B2WorldCreator;
 import com.stickshooter.tools.DebugOverlay;
-import com.stickshooter.tools.WorldContactListener;
 
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -36,7 +27,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -44,9 +34,9 @@ import java.util.HashSet;
 /**
  * Created by Marian on 06.03.2016.
  */
-public class PlayScreen implements Screen {
+public class PlayScreen extends AbstractPlayScreen{
 
-    private PixShooter game;
+    private PixClient game;
     private TextureAtlas atlas;
     private boolean isPaused = false;
     private boolean isMultiplayer = false;
@@ -56,30 +46,20 @@ public class PlayScreen implements Screen {
     byte[] pixels;
 
     //elementy ekranu
-    private OrthographicCamera gamecam;
     private Hud hud;
     private DebugOverlay debugOverlay;
     private PauseMenu pauseMenu;
-    private Viewport gameViewport;
-
-    //mapa
-    private TmxMapLoader mapLoader;
-    private TiledMap map;
-    private MapProperties mapProperties;
-    private OrthogonalTiledMapRenderer renderer;
-
-    //box2D
-    private World world;
-    private Box2DDebugRenderer b2dr;
 
     private Client client;
-    private HashMap<Integer, Player> players;
     private HashSet<Integer> iDs;
+    private HashMap<Integer, Player> players;
+    private Player player;
 
     SimpleDateFormat simpleDateFormat;
 
-    public PlayScreen(PixShooter game) {
+    public PlayScreen(AbstractGame game) {
 
+        super(game);
         simpleDateFormat = new SimpleDateFormat ("E_yyyy.MM.dd_'at'_hh-mm-ss_a_zzz");
 
         shapeRenderer = new ShapeRenderer();
@@ -87,41 +67,20 @@ public class PlayScreen implements Screen {
 
         client = new Client();
 
-        this.game = game;
-        gamecam = new OrthographicCamera();
-
-        gameViewport = new FitViewport(PixShooter.downScale(PixShooter.V_WIDTH/PixShooter.SCALE), PixShooter.downScale(PixShooter.V_HEIGHT/PixShooter.SCALE), gamecam);
+        this.game = (PixClient) game;
 
         hud = new Hud(game.batch);
         pauseMenu = new PauseMenu(game.batch, game.manager);
 
-        mapLoader = new TmxMapLoader();
-        map = mapLoader.load("test.tmx");
-        mapProperties = new MapProperties();
-        mapProperties = map.getProperties();
-        renderer = new OrthogonalTiledMapRenderer(map, 1f/PixShooter.PIXELS_PER_METER);
-        gamecam.position.set(gameViewport.getWorldWidth()/2, gameViewport.getWorldHeight()/2, 0);
-
-
-        world = new World(new Vector2(0, -10f), true);
-
-        players = new HashMap<>();
         iDs = new HashSet<>();
 
-        b2dr = new Box2DDebugRenderer();
-
-        new B2WorldCreator(world, map);
-
-        world.setContactListener(new WorldContactListener());
-
         debugOverlay = new DebugOverlay(game.batch);
+        players = new HashMap<>();
 
         client.connect("Player");
 
-    }
+       //player = new Player(this);
 
-    public TextureAtlas getAtlas() {
-        return atlas;
     }
 
     @Override
@@ -129,123 +88,52 @@ public class PlayScreen implements Screen {
 
     }
 
-    public void handleInput(float dt) throws IOException{
+    @Override
+    public void update(float dt) {
 
-        if(!isPaused) {
+        super.update(dt);
 
-            if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && players.get(client.userId).body.getLinearVelocity().y == 0) {
+        if (players.get(client.userId).body.getPosition().x > gameViewport.getWorldWidth()/2f && players.get(client.userId).body.getPosition().x < PixClient.downScale(PixClient.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldWidth()/2f)
+            gamecam.position.x = players.get(client.userId).body.getPosition().x;
 
-                //player.body.applyLinearImpulse(new Vector2(0, 4f), player.body.getWorldCenter(), true);
-                client.jump();
+        if (players.get(client.userId).body.getPosition().y > gameViewport.getWorldHeight()/2f && players.get(client.userId).body.getPosition().y < PixClient.downScale(PixClient.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldHeight()/2f)
+            gamecam.position.y = players.get(client.userId).body.getPosition().y;
 
-            }
+        for (Integer iD : iDs) {
 
-            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && players.get(client.userId).body.getLinearVelocity().x <= 2f) {
-
-                //player.body.applyLinearImpulse(new Vector2(0.1f, 0), player.body.getWorldCenter(), true);
-                client.moveRight();
-
-            }
-
-            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && players.get(client.userId).body.getLinearVelocity().x >= -2f) {
-
-                //player.body.applyLinearImpulse(new Vector2(-0.1f, 0), player.body.getWorldCenter(), true);
-                client.moveLeft();
-
-            }
-
-            if (Gdx.input.isKeyJustPressed(Input.Keys.F10)) {
-
-                Pixmap pixmap = new Pixmap(Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight(), Pixmap.Format.RGBA8888);
-                pixels = ScreenUtils.getFrameBufferPixels(0, 0, Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight(), true);
-                BufferUtils.copy(pixels, 0, pixmap.getPixels(), pixels.length);
-                PixmapIO.writePNG(Gdx.files.external("Screenshots/Screenshot_" + simpleDateFormat.format(new Date()) + ".png"), pixmap);
-                pixmap.dispose();
-
-            }
-
-            if (Gdx.input.justTouched()) {
-
-                client.shoot(new Vector2(PixShooter.downScale( (2 * (float)Gdx.input.getX() - (float)Gdx.graphics.getWidth() ) / (2 * PixShooter.SCALE) ) + ((gamecam.position.x - players.get(client.userId).body.getPosition().x) * ( (float)gameViewport.getScreenWidth() / PixShooter.V_WIDTH) ), PixShooter.downScale( ( (float)Gdx.graphics.getHeight() - 2 * (float)Gdx.input.getY() ) / (2 * PixShooter.SCALE) ) + ((gamecam.position.y - players.get(client.userId).body.getPosition().y) * ( (float)gameViewport.getScreenHeight() / PixShooter.V_HEIGHT) )).angle());
-                //player.shoot();
-
-            }
+            players.get(iD).update(dt);
 
         }
 
-        if (pauseMenu.getMainMenuButton().isPressed() && pauseMenu.isVisible()) {
+        debugOverlay.update(players.get(client.userId), gameViewport, gamecam);
 
-            game.setScreen(new MainMenuScreen(game));
+        try {
+            handleInput(dt);
+        } catch (IOException e) {}
 
-        }
 
-    }
-
-    public void toggleMenu(float dt) {
-
-        if(!isPaused) {
-
-            if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) && !pauseMenu.isVisible()) {
-
-                if (!isMultiplayer) pause();
-                pauseMenu.show();
-                isPaused = true;
-
-            }
-
-        } else {
-
-            if ((pauseMenu.getPlayButton().isPressed() || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) && pauseMenu.isVisible()) {
-
-                if (!isMultiplayer) resume();
-                pauseMenu.hide();
-                isPaused = false;
-
-            }
-        }
-
-    }
-
-    public void update(float dt) throws IOException{
-
-        handleInput(dt);
         toggleMenu(dt);
 
-        world.step(1/60f, 6, 2);
-
-        if (!players.isEmpty() ) {
-
-            for (Integer iD : iDs) {
-
-                players.get(iD).body.setTransform(client.playersPosition.get(iD).x, client.playersPosition.get(iD).y, 0f);
-                players.get(iD).body.setLinearVelocity(client.playersVelocity.get(iD).x, client.playersVelocity.get(iD).y);
-                players.get(iD).update(dt);
-
-            }
-
-            if (players.get(client.userId).body.getPosition().x > gameViewport.getWorldWidth()/2f && players.get(client.userId).body.getPosition().x < PixShooter.downScale(PixShooter.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldWidth()/2f)
-                gamecam.position.x = players.get(client.userId).body.getPosition().x;
-
-            if (players.get(client.userId).body.getPosition().y > gameViewport.getWorldHeight()/2f && players.get(client.userId).body.getPosition().y < PixShooter.downScale(PixShooter.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldHeight()/2f)
-                gamecam.position.y = players.get(client.userId).body.getPosition().y;
-
-            debugOverlay.update(players.get(client.userId), gameViewport, gamecam);
-
-            //for(int i = 0; i < player.bullets.size(); i++) {
-            //    player.bullets.get(i).update(dt);
-            //    if(player.bullets.get(i).shouldRemove()) {
-            //        player.bullets.get(i).getWorld().destroyBody(player.bullets.get(i).body);
-            //        player.bullets.remove(i);
-            //        i--;
-            //    }
-            //}
-
-        }
-
-        hud.update(dt);
-
-        gamecam.update();
-        renderer.setView(gamecam);
+        //player.update(dt);
+//
+        //if (player.body.getPosition().x > gameViewport.getWorldWidth()/2f && player.body.getPosition().x < PixClient.downScale(PixClient.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldWidth()/2f)
+        //    gamecam.position.x = player.body.getPosition().x;
+//
+        //if (player.body.getPosition().y > gameViewport.getWorldHeight()/2f && player.body.getPosition().y < PixClient.downScale(PixClient.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldHeight()/2f)
+        //    gamecam.position.y = player.body.getPosition().y;
+//
+        //debugOverlay.update(player, gameViewport, gamecam);
+//
+        //for(int i = 0; i < player.bullets.size(); i++) {
+        //    player.bullets.get(i).update(dt);
+        //    if(player.bullets.get(i).shouldRemove()) {
+        //        player.bullets.get(i).getWorld().destroyBody(player.bullets.get(i).body);
+        //        player.bullets.remove(i);
+        //        i--;
+        //    }
+        //}
+//
+        //hud.update(dt);
 
     }
 
@@ -253,36 +141,21 @@ public class PlayScreen implements Screen {
     @Override
     public void render(float delta) {
 
-        try {
+        super.render(delta);
 
-            update(delta);
+        update(delta);
 
-        } catch (IOException e) {
-
-            e.printStackTrace();
-
-        }
-
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        renderer.render();
-
-        b2dr.render(world, gamecam.combined);
-
-        game.batch.setProjectionMatrix(gamecam.combined);
         game.batch.begin();
 
-        if(!players.isEmpty() ) {
 
-            for (Integer iD : iDs) {
+        for (Integer iD : iDs) {
 
-                players.get(iD).sprite.draw(game.batch);
-
-            }
+            players.get(iD).sprite.draw(game.batch);
 
         }
 
+
+        //player.sprite.draw(game.batch);
         game.batch.end();
 
         shapeRenderer.setProjectionMatrix(gamecam.combined);
@@ -309,7 +182,7 @@ public class PlayScreen implements Screen {
     @Override
     public void resize(int width, int height) {
 
-        gameViewport.update(width, height);
+        super.resize(width, height);
         hud.stage.getViewport().update(width, height);
         pauseMenu.stage.getViewport().update(width, height);
         debugOverlay.stage.getViewport().update(width, height);
@@ -318,12 +191,12 @@ public class PlayScreen implements Screen {
 
     @Override
     public void pause() {
-        players.get(client.userId).body.setActive(false);
+        //players.get(client.userId).body.setActive(false);
     }
 
     @Override
     public void resume() {
-        players.get(client.userId).body.setActive(true);
+        //players.get(client.userId).body.setActive(true);
     }
 
     @Override
@@ -334,26 +207,147 @@ public class PlayScreen implements Screen {
     @Override
     public void dispose() {
 
-        map.dispose();
-        renderer.dispose();
-        world.dispose();
-        b2dr.dispose();
+        super.dispose();
         hud.dispose();
         pauseMenu.dispose();
         debugOverlay.dispose();
 
     }
 
-    public World getWorld() {
-        return world;
+    public void updatePlayers(float dt) {
+
+            for (Integer iD : iDs) {
+
+                players.get(iD).body.setTransform(client.playersPosition.get(iD).x, client.playersPosition.get(iD).y, 0f);
+                players.get(iD).body.setLinearVelocity(client.playersVelocity.get(iD).x, client.playersVelocity.get(iD).y);
+
+            }
+
+            //for(int i = 0; i < player.bullets.size(); i++) {
+            //    player.bullets.get(i).update(dt);
+            //    if(player.bullets.get(i).shouldRemove()) {
+            //        player.bullets.get(i).getWorld().destroyBody(player.bullets.get(i).body);
+            //        player.bullets.remove(i);
+            //        i--;
+            //    }
+            //}
+
+
     }
 
-    public OrthographicCamera getGamecam() {
-        return gamecam;
+    public void handleInput(float dt) throws IOException{
+
+        if(!isPaused) {
+
+            if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && players.get(client.userId).body.getLinearVelocity().y == 0) {
+                client.jump();
+
+            }
+
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && players.get(client.userId).body.getLinearVelocity().x <= 2f) {
+                client.moveRight();
+
+            }
+
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && players.get(client.userId).body.getLinearVelocity().x >= -2f) {
+
+                client.moveLeft();
+
+            }
+
+            if (Gdx.input.isKeyJustPressed(Input.Keys.F10)) {
+
+                takeScreenshot();
+
+            }
+
+            if (Gdx.input.justTouched()) {
+
+                client.shoot(new Vector2(PixClient.downScale( (2 * (float)Gdx.input.getX() - (float)Gdx.graphics.getWidth() ) / (2 * PixClient.SCALE) ) + ((gamecam.position.x - players.get(client.userId).body.getPosition().x) * ( (float)gameViewport.getScreenWidth() / PixClient.V_WIDTH) ), PixClient.downScale( ( (float)Gdx.graphics.getHeight() - 2 * (float)Gdx.input.getY() ) / (2 * PixClient.SCALE) ) + ((gamecam.position.y - players.get(client.userId).body.getPosition().y) * ( (float)gameViewport.getScreenHeight() / PixClient.V_HEIGHT) )).angle());
+
+            }
+
+        }
+
+        //if(!isPaused) {
+//
+        //    if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && player.body.getLinearVelocity().y == 0) {
+//
+        //        player.body.applyLinearImpulse(new Vector2(0, 4f), player.body.getWorldCenter(), true);
+//
+        //    }
+//
+        //    if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player.body.getLinearVelocity().x <= 2f) {
+//
+        //        player.body.applyLinearImpulse(new Vector2(0.1f, 0), player.body.getWorldCenter(), true);
+//
+        //    }
+//
+        //    if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player.body.getLinearVelocity().x >= -2f) {
+//
+        //        player.body.applyLinearImpulse(new Vector2(-0.1f, 0), player.body.getWorldCenter(), true);
+//
+        //    }
+//
+        //    if (Gdx.input.isKeyJustPressed(Input.Keys.F10)) {
+//
+        //        takeScreenshot();
+//
+        //    }
+//
+        //    if (Gdx.input.justTouched()) {
+//
+        //        player.shoot();
+//
+        //    }
+//
+        //}
+
+        if (pauseMenu.getMainMenuButton().isPressed() && pauseMenu.isVisible()) {
+
+            game.setScreen(new MainMenuScreen(game));
+
+        }
+
     }
 
-    public Viewport getGameViewport() {
-        return gameViewport;
+    public void toggleMenu(float delta) {
+
+        if(!isPaused) {
+
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) && !pauseMenu.isVisible()) {
+
+                if (!isMultiplayer) pause();
+                pauseMenu.show();
+                isPaused = true;
+
+            }
+
+        } else {
+
+            if ((pauseMenu.getPlayButton().isPressed() || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) && pauseMenu.isVisible()) {
+
+                if (!isMultiplayer) resume();
+                pauseMenu.hide();
+                isPaused = false;
+
+            }
+        }
+
+    }
+
+    public void takeScreenshot() {
+
+        Pixmap pixmap = new Pixmap(Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight(), Pixmap.Format.RGBA8888);
+        pixels = ScreenUtils.getFrameBufferPixels(0, 0, Gdx.graphics.getBackBufferWidth(), Gdx.graphics.getBackBufferHeight(), true);
+        BufferUtils.copy(pixels, 0, pixmap.getPixels(), pixels.length);
+        PixmapIO.writePNG(Gdx.files.external("Screenshots/Screenshot_" + simpleDateFormat.format(new Date()) + ".png"), pixmap);
+        pixmap.dispose();
+
+    }
+
+    public TextureAtlas getAtlas() {
+        return atlas;
     }
 
     private class Client{
@@ -480,6 +474,14 @@ public class PlayScreen implements Screen {
                     interpretNewPlayer();
                     break;
 
+                case FrameType.PLAYER_LEFT:
+                    interpretPlayerLeft();
+                    break;
+
+                case FrameType.PLAYER_SHOT:
+                    interpretPlayerShot();
+                    break;
+
                 default:
                     break;
 
@@ -489,31 +491,34 @@ public class PlayScreen implements Screen {
 
         private void interpretSynchronize() throws Exception{
 
-            synchronized (locker) {
-
-                HashMap<Integer, Vector2> playersPosition = new HashMap<>();
-                HashMap<Integer, Vector2> playersVelocity = new HashMap<>();
+            HashMap<Integer, Vector2> playersPosition = new HashMap<>();
+            HashMap<Integer, Vector2> playersVelocity = new HashMap<>();
+            int iD;
 
                 for(int i = 0; i < players.size(); i++) {
 
-                    int iD = dataInputStream.readInt();
                     Vector2 position = new Vector2();
                     Vector2 velocity = new Vector2();
 
-                    position.x = dataInputStream.readFloat();
-                    position.y = dataInputStream.readFloat();
-                    playersPosition.put(iD, position);
+                    synchronized (locker) {
+                        iD = dataInputStream.readInt();
 
-                    velocity.x = dataInputStream.readFloat();
-                    velocity.y = dataInputStream.readFloat();
+                        position.x = dataInputStream.readFloat();
+                        position.y = dataInputStream.readFloat();
+
+                        velocity.x = dataInputStream.readFloat();
+                        velocity.y = dataInputStream.readFloat();
+                    }
+
                     playersVelocity.put(iD, velocity);
+                    playersPosition.put(iD, position);
 
                 }
 
                 this.playersPosition = playersPosition;
                 this.playersVelocity = playersVelocity;
 
-            }
+            updatePlayers(Gdx.graphics.getDeltaTime());
 
         }
 
@@ -542,6 +547,33 @@ public class PlayScreen implements Screen {
                 players.put(iD, new Player(PlayScreen.this) );
                 iDs.add(iD);
 
+
+            }
+
+        }
+
+        private void interpretPlayerLeft() throws IOException {
+
+            synchronized (locker) {
+
+                int iD = dataInputStream.readInt();
+                players.remove(iD);
+                iDs.remove(iD);
+
+            }
+
+        }
+
+        private void interpretPlayerShot() throws IOException {
+
+            int iD;
+            float degrees;
+
+            synchronized (locker) {
+
+                iD = dataInputStream.readInt();
+                degrees = dataInputStream.readFloat();
+                players.get(iD).bullets.add(new Bullet(players.get(iD), degrees) );
 
             }
 

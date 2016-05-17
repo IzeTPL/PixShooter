@@ -5,7 +5,7 @@ import com.badlogic.gdx.maps.objects.RectangleMapObject;
 import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.physics.box2d.*;
-import com.stickshooter.PixShooter;
+import com.stickshooter.PixClient;
 import com.stickshooter.sprites.Brick;
 import com.stickshooter.sprites.Coin;
 
@@ -26,11 +26,11 @@ public class B2WorldCreator {
 
             Rectangle rect = ((RectangleMapObject) object).getRectangle();
             bdef.type = BodyDef.BodyType.StaticBody;
-            bdef.position.set(PixShooter.downScale(rect.getX() + rect.getWidth()/2), PixShooter.downScale(rect.getY() + rect.getHeight()/2));
+            bdef.position.set(PixClient.downScale(rect.getX() + rect.getWidth()/2), PixClient.downScale(rect.getY() + rect.getHeight()/2));
 
             body = world.createBody(bdef);
 
-            shape.setAsBox(PixShooter.downScale(rect.getWidth()/2), PixShooter.downScale(rect.getHeight()/2));
+            shape.setAsBox(PixClient.downScale(rect.getWidth()/2), PixClient.downScale(rect.getHeight()/2));
             fdef.shape = shape;
             body.createFixture(fdef);
 
@@ -40,11 +40,11 @@ public class B2WorldCreator {
 
             Rectangle rect = ((RectangleMapObject) object).getRectangle();
             bdef.type = BodyDef.BodyType.StaticBody;
-            bdef.position.set(PixShooter.downScale(rect.getX() + rect.getWidth()/2), PixShooter.downScale(rect.getY() + rect.getHeight()/2));
+            bdef.position.set(PixClient.downScale(rect.getX() + rect.getWidth()/2), PixClient.downScale(rect.getY() + rect.getHeight()/2));
 
             body = world.createBody(bdef);
 
-            shape.setAsBox(PixShooter.downScale(rect.getWidth()/2), PixShooter.downScale(rect.getHeight()/2));
+            shape.setAsBox(PixClient.downScale(rect.getWidth()/2), PixClient.downScale(rect.getHeight()/2));
             fdef.shape = shape;
             body.createFixture(fdef);
 

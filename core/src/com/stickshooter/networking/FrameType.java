@@ -11,5 +11,7 @@ public class FrameType {
     public static final int LOGIN = 3;
     public static final int SYNCHRONIZE = 4;
     public static final int NEW_PLAYER = 5;
+    public static final int PLAYER_LEFT = 6;
+    public static final int PLAYER_SHOT = 7;
 
 }

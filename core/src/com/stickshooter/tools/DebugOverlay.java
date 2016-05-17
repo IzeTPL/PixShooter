@@ -16,7 +16,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Disposable;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.stickshooter.PixShooter;
+import com.stickshooter.PixClient;
 import com.stickshooter.sprites.Player;
 
 /**
@@ -35,7 +35,7 @@ public class DebugOverlay implements Disposable {
     public DebugOverlay(SpriteBatch sb) {
 
 
-        viewport = new FitViewport(PixShooter.V_WIDTH, PixShooter.V_HEIGHT, new OrthographicCamera());
+        viewport = new FitViewport(PixClient.V_WIDTH, PixClient.V_HEIGHT, new OrthographicCamera());
 
         labels = new Label[labelCount];
 
@@ -77,10 +77,10 @@ public class DebugOverlay implements Disposable {
         y = player.body.getPosition().y;
         labels[2].setText("y = " + String.format("%.2f", y));
 
-        x = PixShooter.downScale( (2 * (float)Gdx.input.getX() - (float)Gdx.graphics.getWidth() ) / (2 * PixShooter.SCALE) ) + ((orthographicCamera.position.x - player.body.getPosition().x) * ( (float)viewport.getScreenWidth() / PixShooter.V_WIDTH) );
+        x = PixClient.downScale( (2 * (float)Gdx.input.getX() - (float)Gdx.graphics.getWidth() ) / (2 * PixClient.SCALE) ) + ((orthographicCamera.position.x - player.body.getPosition().x) * ( (float)viewport.getScreenWidth() / PixClient.V_WIDTH) );
         labels[3].setText("Mouse according to x = " + String.format("%.2f", x));
 
-        y = PixShooter.downScale( ( (float)Gdx.graphics.getHeight() - 2 * (float)Gdx.input.getY() ) / (2 * PixShooter.SCALE) ) + ((orthographicCamera.position.y - player.body.getPosition().y) * ( (float)viewport.getScreenHeight() / PixShooter.V_HEIGHT) );
+        y = PixClient.downScale( ( (float)Gdx.graphics.getHeight() - 2 * (float)Gdx.input.getY() ) / (2 * PixClient.SCALE) ) + ((orthographicCamera.position.y - player.body.getPosition().y) * ( (float)viewport.getScreenHeight() / PixClient.V_HEIGHT) );
         labels[4].setText("Mouse according to y = " + String.format("%.2f", y));
 
         angle = new Vector2(x, y).angle();
@@ -98,10 +98,10 @@ public class DebugOverlay implements Disposable {
         y = orthographicCamera.position.y - player.body.getPosition().y;
         labels[9].setText("(cam - pos)y = " + String.format("%.2f", y));
 
-        x = PixShooter.downScale( (2 * Gdx.input.getX() - (Gdx.graphics.getWidth() - viewport.getScreenWidth() ) ) / (2 * PixShooter.SCALE) );
+        x = PixClient.downScale( (2 * Gdx.input.getX() - (Gdx.graphics.getWidth() - viewport.getScreenWidth() ) ) / (2 * PixClient.SCALE) );
         labels[10].setText("Mouse x = " + String.format("%.2f", x));
 
-        y = PixShooter.downScale( ( ( (float)Gdx.graphics.getHeight() - Gdx.input.getY() ) / PixShooter.SCALE )  - (Gdx.graphics.getHeight() - viewport.getScreenHeight()) / (2 * PixShooter.SCALE) );
+        y = PixClient.downScale( ( ( (float)Gdx.graphics.getHeight() - Gdx.input.getY() ) / PixClient.SCALE )  - (Gdx.graphics.getHeight() - viewport.getScreenHeight()) / (2 * PixClient.SCALE) );
         labels[11].setText("Mouse y = " + String.format("%.2f", y));
 
     }

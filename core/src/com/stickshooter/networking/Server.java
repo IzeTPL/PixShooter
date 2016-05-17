@@ -1,21 +1,12 @@
 package com.stickshooter.networking;
 
-import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.maps.MapProperties;
-import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.Box2DDebugRenderer;
 import com.badlogic.gdx.physics.box2d.World;
-import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.stickshooter.AbstractGame;
 import com.stickshooter.PixServer;
-import com.stickshooter.PixShooter;
-import com.stickshooter.tools.B2WorldCreator;
-import com.stickshooter.tools.WorldContactListener;
+import com.stickshooter.prototypes.AbstractPlayScreen;
 
 import java.io.Closeable;
 import java.io.DataInputStream;
@@ -33,23 +24,9 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by Marian on 08.04.2016.
  */
-public class Server implements Screen{
+public class Server extends AbstractPlayScreen{
 
     private PixServer game;
-
-    //screen stuff
-    private Viewport viewport;
-    private OrthographicCamera orthographicCamera;
-
-    //map
-    private TmxMapLoader mapLoader;
-    private TiledMap tiledMap;
-    private MapProperties mapProperties;
-
-    //box2D physics
-    private World world;
-    private Box2DDebugRenderer b2dr;
-    private HashMap<Integer, Player> players;
 
     //server elements and logic
     private Socket socket = null;
@@ -60,32 +37,18 @@ public class Server implements Screen{
     private Object locker = new Object();
     private HashSet<DataOutputStream> dataOutputStreams = new HashSet<>();
     private HashMap<DataOutputStream, Integer> iDs;
+    private HashMap<Integer, Player> players;
+    private float timer;
+    private float item;
 
 
-    public Server(PixServer game) {
+    public Server(AbstractGame game) {
 
-        this.game = game;
+        super(game);
+        this.game = (PixServer) game;
 
-        orthographicCamera = new OrthographicCamera();
-        viewport = new FitViewport(PixShooter.downScale(PixServer.V_WIDTH/PixServer.SCALE), PixShooter.downScale(PixServer.V_HEIGHT/PixServer.SCALE), orthographicCamera);
-
-        mapLoader = new TmxMapLoader();
-        tiledMap = mapLoader.load("test.tmx");
-        mapProperties = new MapProperties();
-        mapProperties = tiledMap.getProperties();
-        orthographicCamera.position.set(viewport.getWorldWidth()/2, viewport.getWorldHeight()/2, 0);
-
-        world = new World(new Vector2(0, -10f), true);
-
-        b2dr = new Box2DDebugRenderer();
-
-        new B2WorldCreator(world, tiledMap);
-
-
-        world.setContactListener(new WorldContactListener());
-
-        players = new HashMap<>();
         iDs = new HashMap<>();
+        players = new HashMap<>();
 
         create();
 
@@ -108,27 +71,23 @@ public class Server implements Screen{
         // to the server
         thread = new Thread( ( ) -> {
 
-                while(true) {
-
-                    try {
-
+                try {
+                    while(true) {
                         socket = serverSocket.accept();
-
                         Logic logic = new Logic(socket);
-
                         new Thread(logic).start();
-
-                    } catch (IOException e) {
-
-                        e.printStackTrace();
-
-                    } finally {
-
-                       closeClient();
-
                     }
 
-            }
+                } catch (IOException e) {
+
+                    e.printStackTrace();
+
+                } finally {
+                    try {
+                        stop();
+                    } catch (IOException e) {}
+
+                }
 
         });
 
@@ -143,19 +102,28 @@ public class Server implements Screen{
 
     }
 
-    public void update(float dt){
+    public void stop() throws IOException{
 
-        world.step(1/60f, 6, 2);
+        for (DataOutputStream dataOutputStream:dataOutputStreams) {
+            closeObject(dataOutputStream);
+        }
 
-        orthographicCamera.update();
+        serverSocket.close();
 
-        if(!iDs.isEmpty()) {
+    }
+
+    @Override
+    public void update(float delta){
+
+        super.update(delta);
+
+        if(!iDs.isEmpty() && !dataOutputStreams.isEmpty() && (iDs.size() == dataOutputStreams.size() ) ) {
 
             for (DataOutputStream dataOutputStream : dataOutputStreams) {
 
                 for (int i = 0; i < players.get(iDs.get(dataOutputStream)).bullets.size(); i++) {
 
-                    players.get(iDs.get(dataOutputStream)).bullets.get(i).update(dt);
+                    players.get(iDs.get(dataOutputStream)).bullets.get(i).update(delta);
 
                     if (players.get(iDs.get(dataOutputStream)).bullets.get(i).shouldRemove()) {
 
@@ -171,6 +139,30 @@ public class Server implements Screen{
 
         }
 
+        if(!iDs.isEmpty() && !dataOutputStreams.isEmpty() && (iDs.size() == dataOutputStreams.size() ) ) {
+
+            int i = 0;
+
+            if(item == dataOutputStreams.size()) item = 0;
+            if(timer > 5f && item < dataOutputStreams.size()) {
+                item++;
+                timer = 0f;
+            }
+
+            for (DataOutputStream dataOutputStream:dataOutputStreams) {
+
+                if (i == item) {
+                    gamecam.position.x = players.get(iDs.get(dataOutputStream)).body.getPosition().x;
+                    gamecam.position.y = players.get(iDs.get(dataOutputStream)).body.getPosition().y;
+                }
+                i++;
+
+            }
+
+            timer += delta;
+
+        }
+
     }
 
     @Override
@@ -181,25 +173,15 @@ public class Server implements Screen{
     @Override
     public void render(float delta) {
 
+        super.render(delta);
         update(delta);
-
-
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        b2dr.render(world, orthographicCamera.combined);
-
-        game.batch.setProjectionMatrix(orthographicCamera.combined);
-        game.batch.begin();
-        game.batch.end();
-
 
     }
 
     @Override
     public void resize(int width, int height) {
 
-        viewport.update(width, height);
+        super.resize(width, height);
 
     }
 
@@ -220,6 +202,32 @@ public class Server implements Screen{
 
     @Override
     public void dispose() {
+        super.dispose();
+    }
+
+    private void broadcast() throws IOException {
+
+        for (DataOutputStream dataOutputStream : dataOutputStreams) { //do każdego klienta wyślij:
+
+            synchronized (locker) {
+                dataOutputStream.writeByte(FrameType.SYNCHRONIZE);
+
+                for (DataOutputStream j : dataOutputStreams) {
+
+                    dataOutputStream.writeInt(iDs.get(j));
+
+                    Vector2 position = players.get(iDs.get(j)).body.getPosition();
+                    dataOutputStream.writeFloat(position.x);
+                    dataOutputStream.writeFloat(position.y);
+
+                    Vector2 velocity = players.get(iDs.get(j)).body.getLinearVelocity();
+                    dataOutputStream.writeFloat(velocity.x);
+                    dataOutputStream.writeFloat(velocity.y);
+
+                }
+            }
+
+        }
 
     }
 
@@ -228,6 +236,7 @@ public class Server implements Screen{
         private Socket socket;
         private DataInputStream dataInputStream;
         private DataOutputStream dataOutputStream;
+        private int iD;
 
         public Logic(Socket socket) {
 
@@ -252,77 +261,63 @@ public class Server implements Screen{
 
             }
 
-            Runnable runnable = () -> {
 
-                try {
-
-                    synchronized (locker) {
-
-                        for (DataOutputStream dataOutputStream : dataOutputStreams) { //do każdego klienta wyślij:
-
-                            dataOutputStream.writeByte(FrameType.SYNCHRONIZE);
-
-                            for (DataOutputStream j : dataOutputStreams) {
-
-                                dataOutputStream.writeInt(iDs.get(j) );
-
-                                Vector2 position = players.get(iDs.get(j) ).body.getPosition();
-                                dataOutputStream.writeFloat(position.x);
-                                dataOutputStream.writeFloat(position.y);
-
-                                Vector2 velocity = players.get(iDs.get(j) ).body.getLinearVelocity();
-                                dataOutputStream.writeFloat(velocity.x);
-                                dataOutputStream.writeFloat(velocity.y);
-
-                            }
-
-
-                        }
-
-                    }
-
-                } catch (IOException e) {
-
-                    e.printStackTrace();
-
-                }
-
-            };
-
-            ScheduledExecutorService executorService = Executors.newScheduledThreadPool(1);
-            executorService.scheduleAtFixedRate(runnable, 0, 1, TimeUnit.MILLISECONDS);
-
-            while (true) {
-
-                try {
-
+            try {
+                while (true) {
                     interpretFrame();
+                    broadcast();
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
 
-                } catch (IOException e) {
+                for (DataOutputStream dataOutputStream : dataOutputStreams) {
 
-                    e.printStackTrace();
+                    try {
+                        synchronized (locker) {
+                            dataOutputStream.writeByte(FrameType.PLAYER_LEFT);
+                            dataOutputStream.writeInt(iD);
+                        }
+                    } catch (IOException e) {}
 
                 }
+
+                world.destroyBody(players.get(iDs.get(dataOutputStream)).body);
+                players.remove(iDs.get(dataOutputStream));
+
+                iDs.remove(dataOutputStream);
+                dataOutputStreams.remove(dataOutputStream);
+                try {
+                    dataInputStream.close();
+                    socket.close();
+                    Thread.currentThread().join();
+                } catch (IOException | InterruptedException e){}
 
             }
 
+
+
         }
 
-        private boolean interpretFrame() throws IOException {
+        private void interpretFrame() throws IOException {
 
-                int frameType = dataInputStream.readByte();
+            int frameType;
 
+                frameType = dataInputStream.readByte();
 
                 switch (frameType) {
 
                     case FrameType.MOVE:
-                        return interpretMove();
+                        interpretMove();
+                        break;
                     case FrameType.LOGIN:
-                        return interpretLogin();
+                        interpretLogin();
+                        break;
                     case FrameType.SHOOT:
-                        return interpretShoot();
+                        interpretShoot();
+                        break;
                     default:
-                        return false;
+                        break;
 
                 }
 
@@ -347,7 +342,7 @@ public class Server implements Screen{
 
                 dataOutputStream.writeBoolean(true);
                 Random random = new Random();
-                int iD = random.nextInt(Integer.MAX_VALUE);
+                iD = random.nextInt(Integer.MAX_VALUE);
                 Thread.currentThread().setName("Client-id-" + iD + "-logic-thread");
 
                 dataOutputStream.writeInt(iD);
@@ -371,8 +366,8 @@ public class Server implements Screen{
 
                 for (DataOutputStream dataOutputStream : dataOutputStreams) {
 
-                    dataOutputStream.writeByte(FrameType.NEW_PLAYER);
-                    dataOutputStream.writeInt(iD);
+                        dataOutputStream.writeByte(FrameType.NEW_PLAYER);
+                        dataOutputStream.writeInt(iD);
 
                 }
 
@@ -389,21 +384,22 @@ public class Server implements Screen{
 
             synchronized (locker) {
 
-                players.get(iDs.get(dataOutputStream) ).bullets.add(new Bullet(players.get(iDs.get(dataOutputStream) ), dataInputStream.readFloat() ) );
+                float degrees = dataInputStream.readFloat();
+                players.get(iDs.get(dataOutputStream) ).bullets.add(new Bullet(players.get(iDs.get(dataOutputStream) ), degrees) );
+
+                for (DataOutputStream dataOutputStream : dataOutputStreams) {
+
+                    dataOutputStream.writeByte(FrameType.PLAYER_SHOT);
+                    dataOutputStream.writeInt(iD);
+                    dataOutputStream.writeFloat(degrees);
+
+                }
 
                 return true;
 
             }
 
         }
-
-    }
-
-    private void closeClient() {
-
-        //closeObject(dataInputStream);
-        //closeObject(dataOutputStream);
-        //socket.close();
 
     }
 
@@ -421,18 +417,6 @@ public class Server implements Screen{
         {
             return false;
         }
-    }
-
-    public World getWorld() {
-        return world;
-    }
-
-    public OrthographicCamera getOrthographicCamera() {
-        return orthographicCamera;
-    }
-
-    public Viewport getViewport() {
-        return viewport;
     }
 
 }

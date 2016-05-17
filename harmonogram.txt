@@ -12,7 +12,6 @@ TODO:- zapis automatyczny zrzutu ekranu podczas osiągnięć
 - odczyt zrzutów ekranu GOTOWE 22.03.2016 ------------------------------
 - utworzenie wbudowanej galerii zrzutów ekranu GOTOWE 22.03.2016 ------------------------------
 - zapisywanie konfiguracji mapy GOTOWE 15.03.2016 --------------------------
-TODO:- zapisywanie stanu gry
 
 
 3. Współbieżność: wątki, operacje atomowe, itp.
@@ -43,7 +42,6 @@ TODO:- umożliwienie zapisu w bazie danych tablicy najlepszych wyników
 
 6. Zaproponowane przez studenta (np. wzorce projektowe).
 - zaprogramowanie detekcji kolizji GOTOWE 5.04.2016 ---------------------------------------
-TODO:- podstawowe algorytmy sztucznej inteligecji np pathfinding
 TODO:- dodanie obsługi konkrolera gier
 TODO:- czas rundy
 - synchronizacja kamery z graczem, skalowalność okna oraz wykrycie krawędzi mapy GOTOWE 5.04.2016 ---------------------------

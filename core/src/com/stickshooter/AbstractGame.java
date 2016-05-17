@@ -9,13 +9,11 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGeneratorLoader;
 import com.badlogic.gdx.graphics.g2d.freetype.FreetypeFontLoader;
-import com.stickshooter.networking.Server;
-import com.stickshooter.screens.LoginScreen;
-import com.stickshooter.screens.PlayScreen;
 
-
-public class PixShooter extends Game {
-
+/**
+ * Created by Marian on 16.05.2016.
+ */
+public abstract class AbstractGame extends Game{
     //podstawowe parametry gry
     public SpriteBatch batch;
     public static final int V_WIDTH = 1280;
@@ -27,19 +25,17 @@ public class PixShooter extends Game {
 
     //flagi bitowe
     public static final short DEFAULT_BIT = 1;
-    public static final short MARIO_BIT = 2;
+    public static final short PLAYER_BIT = 2;
     public static final short BRICK_BIT = 4;
     public static final short COIN_BIT = 8;
     public static final short DESTROYED_BIT = 16;
     public static final short BULLET_BIT = 32;
-
+    public static final short HEAD_BIT = 64;
+    public static final short OBJECT_BIT = 128;
     //fonty
     public AssetManager manager = new AssetManager();
     public static final String MENU_FONT = "Capture_it.ttf";
     public static final String SIGN_FONT = "GreatVibes-Regular.ttf";
-
-    //Networking
-    private Server server;
 
     @Override
     public void create () {
@@ -48,19 +44,20 @@ public class PixShooter extends Game {
         manager.setLoader(FreeTypeFontGenerator.class, new FreeTypeFontGeneratorLoader(resolver));
         manager.setLoader(BitmapFont.class, ".ttf", new FreetypeFontLoader(resolver));
         batch = new SpriteBatch();
-        //setScreen(new PlayScreen(this));
-        setScreen(new LoginScreen(this));
 
     }
 
     @Override
     public void render () {
+
         super.render();
+
     }
 
     @Override
     public void dispose() {
 
+        super.dispose();
         batch.dispose();
 
     }
@@ -90,4 +87,3 @@ public class PixShooter extends Game {
     }
 
 }
-

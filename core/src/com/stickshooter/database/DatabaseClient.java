@@ -1,12 +1,6 @@
 package com.stickshooter.database;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.sql.*;
 
 /**
  * Created by Marian on 25.04.2016.
@@ -14,7 +8,7 @@ import java.util.logging.Logger;
 public class DatabaseClient {
 
         private Connection conn = null;
-    private Statement stmt = null;
+    private PreparedStatement stmt = null;
     private ResultSet rs = null;
 
         public void connect() {
@@ -37,10 +31,12 @@ public class DatabaseClient {
     public boolean verifyUser(String username, String password){
         try {
 
-            stmt = conn.createStatement();
+            String sql = "SELECT pixshooter_username, pixshooter_password FROM pixshooter_users WHERE pixshooter_username = ? AND pixshooter_password = ?";
+            stmt = conn.prepareStatement(sql);
 
-            String sql = "SELECT pixshooter_username, pixshooter_password FROM pixshooter_users WHERE pixshooter_username = '" + username + "' AND pixshooter_password = '" + password + "'";
-            rs = stmt.executeQuery(sql);
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            rs = stmt.executeQuery();
 
             if(rs.next()){
 
@@ -82,10 +78,13 @@ public class DatabaseClient {
 
         try {
 
-            stmt = conn.createStatement();
 
-            String sql = "INSERT INTO pixshooter_users (pixshooter_username, pixshooter_password) VALUES ('" + username + "', '" + password +"')";
-            stmt.executeUpdate(sql);
+
+            String sql = "INSERT INTO pixshooter_users (pixshooter_username, pixshooter_password) VALUES (?, ?)";
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, username);
+            stmt.setString(2, password);
+            stmt.executeUpdate();
 
 
         }catch (SQLException ex){
@@ -119,10 +118,13 @@ public class DatabaseClient {
 
         try {
 
-            stmt = conn.createStatement();
 
-            String sql = "UPDATE pixshooter_users SET pixshooter_password = '"+ password +"' WHERE pixshooter_username = '" + username +"'";
-            stmt.executeUpdate(sql);
+
+            String sql = "UPDATE pixshooter_users SET pixshooter_password = ? WHERE pixshooter_username = ?";
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, password);
+            stmt.setString(2, username);
+            stmt.executeUpdate();
 
 
         }catch (SQLException ex){
@@ -155,10 +157,12 @@ public class DatabaseClient {
 
         try {
 
-            stmt = conn.createStatement();
 
-            String sql = "DELETE FROM pixshooter_users WHERE pixshooter_username = '" + username + "'";
-            stmt.executeUpdate(sql);
+
+            String sql = "DELETE FROM pixshooter_users WHERE pixshooter_username = ?";
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, username);
+            stmt.executeUpdate();
 
 
         }catch (SQLException ex){

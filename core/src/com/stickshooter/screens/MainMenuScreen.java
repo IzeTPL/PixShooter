@@ -12,7 +12,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.stickshooter.PixShooter;
+import com.stickshooter.PixClient;
 import com.stickshooter.tools.FTFontGenerator;
 
 /**
@@ -24,7 +24,7 @@ public class MainMenuScreen implements Screen {
     * -obsługa klawiatury
      */
 
-    private PixShooter game;
+    private PixClient game;
 
     private OrthographicCamera gamecam;
     private Viewport gameViewport;
@@ -47,28 +47,28 @@ public class MainMenuScreen implements Screen {
 
 
 
-    public MainMenuScreen(PixShooter game) {
+    public MainMenuScreen(PixClient game) {
 
         this.game = game;
 
         //kamera
         gamecam = new OrthographicCamera();
-        gameViewport = new FitViewport(PixShooter.V_WIDTH, PixShooter.V_HEIGHT, gamecam);
+        gameViewport = new FitViewport(PixClient.V_WIDTH, PixClient.V_HEIGHT, gamecam);
         gamecam.position.set(gameViewport.getWorldWidth()/2, gameViewport.getWorldHeight()/2, 0);
 
         //generowanie fontu bitmap
         generator = new FTFontGenerator(game.manager);
 
         textButtonStyle = new TextButton.TextButtonStyle();
-        textButtonStyle.font = generator.generateFont(PixShooter.MENU_FONT, 75);
+        textButtonStyle.font = generator.generateFont(PixClient.MENU_FONT, 75);
         textButtonStyle.fontColor = Color.WHITE;
         textButtonStyle.overFontColor = Color.RED;
 
         labelStyle = new Label.LabelStyle();
-        labelStyle.font = generator.generateFont(PixShooter.MENU_FONT, 100);
+        labelStyle.font = generator.generateFont(PixClient.MENU_FONT, 100);
 
         authorStyle = new Label.LabelStyle();
-        authorStyle.font = generator.generateFont(PixShooter.SIGN_FONT, 45);
+        authorStyle.font = generator.generateFont(PixClient.SIGN_FONT, 45);
 
         //tworzenie przycisków
         playButton = new TextButton("PLAY", textButtonStyle);

@@ -1,14 +1,14 @@
 package com.stickshooter.sprites;
 
-import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.*;
+import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.viewport.Viewport;
-import com.stickshooter.PixShooter;
+import com.stickshooter.PixClient;
+import com.stickshooter.prototypes.AbstractPlayer;
 import com.stickshooter.screens.PlayScreen;
 
 import java.util.ArrayList;
@@ -16,15 +16,14 @@ import java.util.ArrayList;
 /**
  * Created by Marian on 06.03.2016.
  */
-public class Player{
+public class Player extends AbstractPlayer{
+
+    public ArrayList<Bullet> bullets;
 
     public enum State { FALLING, JUMPING, STANDING, RUNNING, KICKED, DEAD }
     public State currentState;
     public State previousState;
 
-
-    public World world;
-    public Body body;
     private Sprite stickmanStand;
     private Animation stickmanRun;
     private Animation stickmanJump;
@@ -32,17 +31,13 @@ public class Player{
     private boolean runningRight;
     public Sprite sprite;
 
-    private OrthographicCamera orthographicCamera;
-    private Viewport viewport;
-
-    public ArrayList<Bullet> bullets;
-
     public Player(PlayScreen screen) {
 
+        super(screen);
+
+        bullets = new ArrayList<>();
+
         sprite = new Sprite(screen.getAtlas().findRegion("little_mario"));
-        this.world = screen.getWorld();
-        this.orthographicCamera = screen.getGamecam();
-        this.viewport = screen.getGameViewport();
 
         currentState = State.STANDING;
         previousState = State.STANDING;
@@ -50,8 +45,6 @@ public class Player{
         runningRight = true;
 
         Array<TextureRegion> frames = new Array<TextureRegion>();
-
-        bullets = new ArrayList<Bullet>();
 
         for(int i = 1; i < 4; i++) {
 
@@ -69,11 +62,8 @@ public class Player{
         }
 
         stickmanJump = new Animation(0.1f, frames);
-
-
-        definePlayer();
         stickmanStand = new Sprite(sprite.getTexture(), 1, 11, 16, 16);
-        sprite.setBounds(0, 0, PixShooter.downScale(16), PixShooter.downScale(16));
+        sprite.setBounds(0, 0, PixClient.downScale(16), PixClient.downScale(16));
         sprite.setRegion(stickmanStand);
 
     }
@@ -137,46 +127,14 @@ public class Player{
 
     }
 
-    public void definePlayer() {
-
-        BodyDef bdef = new BodyDef();
-        bdef.position.set(PixShooter.downScale(32 + 8), PixShooter.downScale(48 + 8));
-        bdef.type = BodyDef.BodyType.DynamicBody;
-        body = world.createBody(bdef);
-
-        FixtureDef fdef = new FixtureDef();
-        CircleShape shape = new CircleShape();
-        shape.setRadius(PixShooter.downScale((PixShooter.TILE_SIZE - 2) / 2f));
-        fdef.filter.categoryBits = PixShooter.MARIO_BIT;
-        fdef.filter.maskBits = PixShooter.DEFAULT_BIT | PixShooter.COIN_BIT | PixShooter.BRICK_BIT;
-
-        fdef.shape = shape;
-        body.createFixture(fdef);
-
-        EdgeShape head = new EdgeShape();
-        head.set(new Vector2(PixShooter.downScale(-2),PixShooter.downScale(7) ), new Vector2(PixShooter.downScale(2), PixShooter.downScale(7) ) );
-        fdef.shape = head;
-        fdef.isSensor = true;
-
-        body.createFixture(fdef).setUserData("head");
-    }
-
     public void shoot() {
 
-        bullets.add(new Bullet(this));
+        float degrees = new Vector2(PixClient.downScale( (2 * (float) Gdx.input.getX()
+                - (float)Gdx.graphics.getWidth() ) / (2 * PixClient.SCALE) )
+                + ((orthographicCamera.position.x - body.getPosition().x) * ( (float)viewport.getScreenWidth() / PixClient.V_WIDTH) ), PixClient.downScale( ( (float)Gdx.graphics.getHeight()
+                - 2 * (float)Gdx.input.getY() ) / (2 * PixClient.SCALE) ) + ((orthographicCamera.position.y - body.getPosition().y) * ( (float)viewport.getScreenHeight() / PixClient.V_HEIGHT) )).angle();
+        bullets.add(new Bullet(this, degrees));
 
-    }
-
-    public World getWorld() {
-        return world;
-    }
-
-    public Viewport getViewport() {
-        return viewport;
-    }
-
-    public OrthographicCamera getOrthographicCamera() {
-        return orthographicCamera;
     }
 
 }
