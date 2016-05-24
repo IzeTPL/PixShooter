@@ -1,37 +1,26 @@
 package com.stickshooter.screens;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.Viewport;
 import com.stickshooter.PixClient;
 import com.stickshooter.database.DatabaseClient;
 import com.stickshooter.database.PatternMatcher;
+import com.stickshooter.prototypes.AbstractMenuScreen;
 import com.stickshooter.tools.DrawableColor;
-import com.stickshooter.tools.FTFontGenerator;
 
 /**
  * Created by Marian on 25.04.2016.
  */
-public class LoginScreen implements Screen {
+public class LoginScreen extends AbstractMenuScreen {
 
-    private PixClient game;
     private DatabaseClient databaseClient;
 
-    private OrthographicCamera gamecam;
-    private Viewport gameViewport;
-
-    private Stage stage;
     private Table table;
     private Table createUser;
     private Table login;
@@ -40,8 +29,9 @@ public class LoginScreen implements Screen {
     private Label newUserLabel;
     private Label loginResultLabel;
     private Label createResultLabel;
-    private Label.LabelStyle labelStyle;
     private Label.LabelStyle resultStyle;
+    private Label.LabelStyle mainLabelStyle;
+    private Label.LabelStyle labelStyle;
 
     private TextButton loginButton;
     private TextButton createUserButton;
@@ -59,26 +49,14 @@ public class LoginScreen implements Screen {
     private TextField.TextFieldStyle greenFieldStyle;
     private BitmapFont standardBitmapFont;
 
-
-    //generator Bitmap font
-    private FTFontGenerator generator;
     private PatternMatcher patternMatcher;
-
-
 
     public LoginScreen(PixClient game) {
 
+        super(game);
         this.game = game;
         patternMatcher = new PatternMatcher();
         standardBitmapFont = new BitmapFont();
-
-        //kamera
-        gamecam = new OrthographicCamera();
-        gameViewport = new FitViewport(PixClient.V_WIDTH, PixClient.V_HEIGHT, gamecam);
-        gamecam.position.set(gameViewport.getWorldWidth()/2, gameViewport.getWorldHeight()/2, 0);
-
-        //generowanie fontu bitmap
-        generator = new FTFontGenerator(game.manager);
 
         textButtonStyle = new TextButton.TextButtonStyle();
         textButtonStyle.font = generator.generateFont(PixClient.MENU_FONT, 75);
@@ -101,8 +79,9 @@ public class LoginScreen implements Screen {
         greenFieldStyle.background = DrawableColor.getColor(Color.GREEN);
 
         labelStyle = new Label.LabelStyle();
-        labelStyle.font = generator.generateFont(PixClient.MENU_FONT, 50);
-        labelStyle.fontColor = Color.WHITE;
+        labelStyle.font = generator.generateFont(PixClient.MENU_FONT, 25);
+        mainLabelStyle = new Label.LabelStyle();
+        mainLabelStyle.font = generator.generateFont(PixClient.MENU_FONT, 100);
 
         resultStyle = new Label.LabelStyle();
         resultStyle.font = standardBitmapFont;
@@ -119,8 +98,8 @@ public class LoginScreen implements Screen {
         backButton = new TextButton("BACK", textButtonStyle);
         newUserButton = new TextButton("CREATE USER", textButtonStyle);
 
-        newUserLabel = new Label("NEW USER", labelStyle);
-        loginLabel = new Label("LOGIN", labelStyle);
+        newUserLabel = new Label("NEW USER", mainLabelStyle);
+        loginLabel = new Label("SIGN IN", mainLabelStyle);
         loginResultLabel = new Label("", resultStyle);
         createResultLabel = new Label("", resultStyle);
 
@@ -131,7 +110,6 @@ public class LoginScreen implements Screen {
         newPasswordField.setPasswordMode(true);
         newPasswordField.setPasswordCharacter('*');
 
-        //układam elementy w kontenerze
         table = new Table();
         table.debug();
         table.top().padTop(50);
@@ -175,21 +153,19 @@ public class LoginScreen implements Screen {
 
         table.add(login);
 
-        //dodajemy elementy na scenę
-        stage = new Stage(gameViewport, game.batch);
         stage.addActor(table);
 
-        //aktywuje nasłuchiwanie przycisków
         Gdx.input.setInputProcessor(stage);
         loginButton.addListener(new ClickListener());
         createUserButton.addListener(new ClickListener());
         newUserButton.addListener(new ClickListener());
         backButton.addListener(new ClickListener());
 
-
-
         databaseClient = new DatabaseClient();
         databaseClient.connect();
+
+        loginField.setText("test");
+        passwordField.setText("test@123A");
 
     }
 
@@ -202,12 +178,7 @@ public class LoginScreen implements Screen {
     @Override
     public void render(float delta) {
 
-
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-        stage.draw();
-        stage.act();
+        super.render(delta);
 
         updateFields();
         handleInput();
@@ -217,9 +188,7 @@ public class LoginScreen implements Screen {
     @Override
     public void resize(int width, int height) {
 
-
-
-        gameViewport.update(width, height);
+        super.resize(width, height);
 
     }
 
@@ -241,8 +210,7 @@ public class LoginScreen implements Screen {
     @Override
     public void dispose() {
 
-        generator.dispose();
-        stage.dispose();
+        super.dispose();
 
     }
 
@@ -306,11 +274,14 @@ public class LoginScreen implements Screen {
 
                 resultStyle.fontColor = Color.GREEN;
                 loginResultLabel.setText("Successfully logged in");
+                game.login = loginField.getText();
+                game.password = passwordField.getText();
+                game.setScreen(new MainMenuScreen(game) );
 
             } else {
 
                 resultStyle.fontColor = Color.RED;
-                loginResultLabel.setText("Something went wrong");
+                loginResultLabel.setText("Incorrect username or password");
 
             }
 

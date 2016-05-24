@@ -1,11 +1,8 @@
 package com.stickshooter.sprites;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.World;
 import com.badlogic.gdx.utils.Array;
 import com.stickshooter.PixClient;
 import com.stickshooter.prototypes.AbstractPlayer;
@@ -20,13 +17,9 @@ public class Player extends AbstractPlayer{
 
     public ArrayList<Bullet> bullets;
 
-    public enum State { FALLING, JUMPING, STANDING, RUNNING, KICKED, DEAD }
-    public State currentState;
-    public State previousState;
-
-    private Sprite stickmanStand;
-    private Animation stickmanRun;
-    private Animation stickmanJump;
+    private Sprite stand;
+    private Animation run;
+    private Animation jump;
     private float stateTimer;
     private boolean runningRight;
     public Sprite sprite;
@@ -34,6 +27,7 @@ public class Player extends AbstractPlayer{
     public Player(PlayScreen screen) {
 
         super(screen);
+        super.definePlayer();
 
         bullets = new ArrayList<>();
 
@@ -52,7 +46,7 @@ public class Player extends AbstractPlayer{
 
         }
 
-        stickmanRun = new Animation(0.1f, frames);
+        run = new Animation(0.1f, frames);
         frames.clear();
 
         for(int i = 4; i < 6; i++) {
@@ -61,17 +55,32 @@ public class Player extends AbstractPlayer{
 
         }
 
-        stickmanJump = new Animation(0.1f, frames);
-        stickmanStand = new Sprite(sprite.getTexture(), 1, 11, 16, 16);
+        jump = new Animation(0.1f, frames);
+        stand = new Sprite(sprite.getTexture(), 1, 11, 16, 16);
         sprite.setBounds(0, 0, PixClient.downScale(16), PixClient.downScale(16));
-        sprite.setRegion(stickmanStand);
+        sprite.setRegion(stand);
 
     }
 
+    @Override
     public void update(float dt){
 
         sprite.setPosition(body.getPosition().x - sprite.getWidth()/2, body.getPosition().y - sprite.getHeight()/2);
         sprite.setRegion(getFrame(dt));
+
+        if(currentState == State.DEAD) {
+
+            remove = true;
+
+        }
+
+        if(respawn) {
+
+            respawn = false;
+            lifeTimer = 0;
+            definePlayer();
+
+        }
 
     }
 
@@ -83,15 +92,15 @@ public class Player extends AbstractPlayer{
         switch(currentState) {
 
             case JUMPING:
-                region = stickmanJump.getKeyFrame(stateTimer);
+                region = jump.getKeyFrame(stateTimer);
                 break;
             case RUNNING:
-                region = stickmanRun.getKeyFrame(stateTimer, true);
+                region = run.getKeyFrame(stateTimer, true);
                 break;
             case FALLING:
             case STANDING:
             default:
-                region = stickmanStand;
+                region = stand;
                 break;
 
         }
@@ -124,16 +133,6 @@ public class Player extends AbstractPlayer{
             return State.RUNNING;
         else
             return State.STANDING;
-
-    }
-
-    public void shoot() {
-
-        float degrees = new Vector2(PixClient.downScale( (2 * (float) Gdx.input.getX()
-                - (float)Gdx.graphics.getWidth() ) / (2 * PixClient.SCALE) )
-                + ((orthographicCamera.position.x - body.getPosition().x) * ( (float)viewport.getScreenWidth() / PixClient.V_WIDTH) ), PixClient.downScale( ( (float)Gdx.graphics.getHeight()
-                - 2 * (float)Gdx.input.getY() ) / (2 * PixClient.SCALE) ) + ((orthographicCamera.position.y - body.getPosition().y) * ( (float)viewport.getScreenHeight() / PixClient.V_HEIGHT) )).angle();
-        bullets.add(new Bullet(this, degrees));
 
     }
 

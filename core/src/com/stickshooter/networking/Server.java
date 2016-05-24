@@ -1,9 +1,7 @@
 package com.stickshooter.networking;
 
-import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.physics.box2d.World;
-import com.badlogic.gdx.utils.viewport.Viewport;
 import com.stickshooter.AbstractGame;
 import com.stickshooter.PixServer;
 import com.stickshooter.prototypes.AbstractPlayScreen;
@@ -17,9 +15,6 @@ import java.net.Socket;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Random;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Created by Marian on 08.04.2016.
@@ -36,10 +31,11 @@ public class Server extends AbstractPlayScreen{
     private Thread thread;
     private Object locker = new Object();
     private HashSet<DataOutputStream> dataOutputStreams = new HashSet<>();
-    private HashMap<DataOutputStream, Integer> iDs;
+    private HashMap<DataOutputStream, Integer> IDs;
     private HashMap<Integer, Player> players;
     private float timer;
     private float item;
+    private int port = 1337;
 
 
     public Server(AbstractGame game) {
@@ -47,7 +43,7 @@ public class Server extends AbstractPlayScreen{
         super(game);
         this.game = (PixServer) game;
 
-        iDs = new HashMap<>();
+        IDs = new HashMap<>();
         players = new HashMap<>();
 
         create();
@@ -60,10 +56,11 @@ public class Server extends AbstractPlayScreen{
 
         try
         {
-            serverSocket = new ServerSocket( 1337 );
+            serverSocket = new ServerSocket(port);
         }
         catch ( IOException e )
         {
+            port++;
             return false;
         }
 
@@ -71,23 +68,30 @@ public class Server extends AbstractPlayScreen{
         // to the server
         thread = new Thread( ( ) -> {
 
-                try {
-                    while(true) {
-                        socket = serverSocket.accept();
-                        Logic logic = new Logic(socket);
-                        new Thread(logic).start();
-                    }
-
-                } catch (IOException e) {
-
-                    e.printStackTrace();
-
-                } finally {
-                    try {
-                        stop();
-                    } catch (IOException e) {}
-
+            try {
+                while(true) {
+                    socket = serverSocket.accept();
+                    Logic logic = new Logic(socket);
+                    new Thread(logic).start();
                 }
+
+            } catch (IOException e) {
+
+                try {
+                    stop();
+                } catch (IOException ex) {
+                    Gdx.app.exit();
+                }
+
+            } finally {
+
+                try {
+                    stop();
+                } catch (IOException e) {
+                    Gdx.app.exit();
+                }
+
+            }
 
         });
 
@@ -117,18 +121,53 @@ public class Server extends AbstractPlayScreen{
 
         super.update(delta);
 
-        if(!iDs.isEmpty() && !dataOutputStreams.isEmpty() && (iDs.size() == dataOutputStreams.size() ) ) {
+        if(!IDs.isEmpty() && !dataOutputStreams.isEmpty() && (IDs.size() == dataOutputStreams.size() ) ) {
 
             for (DataOutputStream dataOutputStream : dataOutputStreams) {
 
-                for (int i = 0; i < players.get(iDs.get(dataOutputStream)).bullets.size(); i++) {
+                players.get(IDs.get(dataOutputStream)).update(delta);
 
-                    players.get(iDs.get(dataOutputStream)).bullets.get(i).update(delta);
+                if(players.get(IDs.get(dataOutputStream)).shouldRemove() ) {
 
-                    if (players.get(iDs.get(dataOutputStream)).bullets.get(i).shouldRemove()) {
+                    players.get(IDs.get(dataOutputStream)).getWorld().destroyBody(players.get(IDs.get(dataOutputStream)).body);
+                    players.get(IDs.get(dataOutputStream)).reset();
 
-                        players.get(iDs.get(dataOutputStream)).bullets.get(i).getWorld().destroyBody(players.get(iDs.get(dataOutputStream)).bullets.get(i).body);
-                        players.get(iDs.get(dataOutputStream)).bullets.remove(i);
+                    new Thread( ( ) -> {
+
+                        try {
+                            synchronized (locker) {
+                                dataOutputStream.writeByte(FrameType.PLAYER_DIED);
+                                dataOutputStream.writeInt(IDs.get(dataOutputStream));
+                            }
+                        } catch (IOException e) {}
+
+                    });
+
+                }
+
+                if(players.get(IDs.get(dataOutputStream)).shouldRespawn() ) {
+
+                    new Thread( ( ) -> {
+
+                        try {
+                            synchronized (locker) {
+                                dataOutputStream.writeByte(FrameType.PLAYER_RESPAWN);
+                                dataOutputStream.writeInt(IDs.get(dataOutputStream));
+                            }
+                        } catch (IOException e) {}
+
+                    });
+
+                }
+
+                for (int i = 0; i < players.get(IDs.get(dataOutputStream)).bullets.size(); i++) {
+
+                    players.get(IDs.get(dataOutputStream)).bullets.get(i).update(delta);
+
+                    if (players.get(IDs.get(dataOutputStream)).bullets.get(i).shouldRemove()) {
+
+                        players.get(IDs.get(dataOutputStream)).bullets.get(i).getWorld().destroyBody(players.get(IDs.get(dataOutputStream)).bullets.get(i).body);
+                        players.get(IDs.get(dataOutputStream)).bullets.remove(i);
                         i--;
 
                     }
@@ -136,10 +175,6 @@ public class Server extends AbstractPlayScreen{
                 }
 
             }
-
-        }
-
-        if(!iDs.isEmpty() && !dataOutputStreams.isEmpty() && (iDs.size() == dataOutputStreams.size() ) ) {
 
             int i = 0;
 
@@ -151,9 +186,9 @@ public class Server extends AbstractPlayScreen{
 
             for (DataOutputStream dataOutputStream:dataOutputStreams) {
 
-                if (i == item) {
-                    gamecam.position.x = players.get(iDs.get(dataOutputStream)).body.getPosition().x;
-                    gamecam.position.y = players.get(iDs.get(dataOutputStream)).body.getPosition().y;
+                if (i == item && players.get(IDs.get(dataOutputStream)).currentState != Player.State.DEAD) {
+                    orthographicCamera.position.x = players.get(IDs.get(dataOutputStream)).body.getPosition().x;
+                    orthographicCamera.position.y = players.get(IDs.get(dataOutputStream)).body.getPosition().y;
                 }
                 i++;
 
@@ -205,38 +240,13 @@ public class Server extends AbstractPlayScreen{
         super.dispose();
     }
 
-    private void broadcast() throws IOException {
-
-        for (DataOutputStream dataOutputStream : dataOutputStreams) { //do każdego klienta wyślij:
-
-            synchronized (locker) {
-                dataOutputStream.writeByte(FrameType.SYNCHRONIZE);
-
-                for (DataOutputStream j : dataOutputStreams) {
-
-                    dataOutputStream.writeInt(iDs.get(j));
-
-                    Vector2 position = players.get(iDs.get(j)).body.getPosition();
-                    dataOutputStream.writeFloat(position.x);
-                    dataOutputStream.writeFloat(position.y);
-
-                    Vector2 velocity = players.get(iDs.get(j)).body.getLinearVelocity();
-                    dataOutputStream.writeFloat(velocity.x);
-                    dataOutputStream.writeFloat(velocity.y);
-
-                }
-            }
-
-        }
-
-    }
-
     private class Logic implements Runnable {
 
         private Socket socket;
         private DataInputStream dataInputStream;
         private DataOutputStream dataOutputStream;
-        private int iD;
+        private int ID;
+        private boolean connected = false;
 
         public Logic(Socket socket) {
 
@@ -253,49 +263,55 @@ public class Server extends AbstractPlayScreen{
                 dataInputStream = new DataInputStream(socket.getInputStream());
                 dataOutputStream = new DataOutputStream(socket.getOutputStream());
                 dataOutputStreams.add(dataOutputStream);
-
+                this.connected = true;
 
             } catch (IOException e) {
-
-                e.printStackTrace();
-
+                this.connected = false;
             }
 
-
-            try {
-                while (true) {
-                    interpretFrame();
-                    broadcast();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-
-                for (DataOutputStream dataOutputStream : dataOutputStreams) {
-
-                    try {
-                        synchronized (locker) {
-                            dataOutputStream.writeByte(FrameType.PLAYER_LEFT);
-                            dataOutputStream.writeInt(iD);
-                        }
-                    } catch (IOException e) {}
-
-                }
-
-                world.destroyBody(players.get(iDs.get(dataOutputStream)).body);
-                players.remove(iDs.get(dataOutputStream));
-
-                iDs.remove(dataOutputStream);
-                dataOutputStreams.remove(dataOutputStream);
+            if(connected) {
                 try {
-                    dataInputStream.close();
-                    socket.close();
-                    Thread.currentThread().join();
-                } catch (IOException | InterruptedException e){}
+
+                    while (true) {
+
+                        interpretFrame();
+                        broadcast();
+
+                    }
+
+                } catch (IOException e) {
+                } finally {
+
+                    for (DataOutputStream dataOutputStream : dataOutputStreams) {
+
+                        if (dataOutputStream != this.dataOutputStream){
+                            try {
+                                synchronized (locker) {
+                                    dataOutputStream.writeByte(FrameType.PLAYER_LEFT);
+                                    dataOutputStream.writeInt(ID);
+                                }
+                            } catch (IOException e) {
+                            }
+                        }
+
+                    }
+
+                    world.destroyBody(players.get(IDs.get(dataOutputStream)).body);
+                    players.remove(IDs.get(dataOutputStream));
+
+                    IDs.remove(dataOutputStream);
+                    dataOutputStreams.remove(dataOutputStream);
+                    try {
+                        dataInputStream.close();
+                        dataOutputStream.close();
+                        socket.close();
+                        Thread.currentThread().join();
+                    } catch (IOException | InterruptedException e) {
+                    }
+
+                }
 
             }
-
-
 
         }
 
@@ -303,24 +319,52 @@ public class Server extends AbstractPlayScreen{
 
             int frameType;
 
-                frameType = dataInputStream.readByte();
+            frameType = dataInputStream.readByte();
 
-                switch (frameType) {
+            switch (frameType) {
 
-                    case FrameType.MOVE:
-                        interpretMove();
-                        break;
-                    case FrameType.LOGIN:
-                        interpretLogin();
-                        break;
-                    case FrameType.SHOOT:
-                        interpretShoot();
-                        break;
-                    default:
-                        break;
+                case FrameType.MOVE:
+                    interpretMove();
+                    break;
+                case FrameType.LOGIN:
+                    interpretLogin();
+                    break;
+                case FrameType.SHOOT:
+                    interpretShoot();
+                    break;
+                default:
+                    break;
 
+            }
+
+
+        }
+
+        private void broadcast() throws IOException {
+
+            for (DataOutputStream dataOutputStream : dataOutputStreams) {
+
+                synchronized (locker) {
+                    dataOutputStream.writeByte(FrameType.SYNCHRONIZE);
+
+                    for (DataOutputStream j : dataOutputStreams) {
+
+                        if(players.get(IDs.get(j)).currentState != Player.State.DEAD) {
+                            dataOutputStream.writeInt(IDs.get(j));
+
+                            Vector2 position = players.get(IDs.get(j)).body.getPosition();
+                            dataOutputStream.writeFloat(position.x);
+                            dataOutputStream.writeFloat(position.y);
+
+                            Vector2 velocity = players.get(IDs.get(j)).body.getLinearVelocity();
+                            dataOutputStream.writeFloat(velocity.x);
+                            dataOutputStream.writeFloat(velocity.y);
+                        }
+
+                    }
                 }
 
+            }
 
         }
 
@@ -328,7 +372,7 @@ public class Server extends AbstractPlayScreen{
 
             synchronized (locker) {
 
-                players.get(iDs.get(dataOutputStream) ).move(dataInputStream.readByte());
+                players.get(IDs.get(dataOutputStream) ).move(dataInputStream.readByte());
 
                 return true;
 
@@ -342,21 +386,19 @@ public class Server extends AbstractPlayScreen{
 
                 dataOutputStream.writeBoolean(true);
                 Random random = new Random();
-                iD = random.nextInt(Integer.MAX_VALUE);
-                Thread.currentThread().setName("Client-id-" + iD + "-logic-thread");
+                ID = random.nextInt(Integer.MAX_VALUE);
+                Thread.currentThread().setName("Client-id-" + ID + "-logic-thread");
 
-                dataOutputStream.writeInt(iD);
+                dataOutputStream.writeInt(ID);
+                dataOutputStream.writeInt(IDs.size() );
 
-                dataOutputStream.writeInt(iDs.size() );
-
-
-                if(!iDs.isEmpty()) {
+                if(!IDs.isEmpty()) {
 
                     for (DataOutputStream dataOutputStream : dataOutputStreams) {
 
-                        if (iDs.containsKey(dataOutputStream) ) {
+                        if (IDs.containsKey(dataOutputStream) ) {
 
-                            this.dataOutputStream.writeInt(iDs.get(dataOutputStream) );
+                            this.dataOutputStream.writeInt(IDs.get(dataOutputStream) );
 
                         }
 
@@ -366,13 +408,13 @@ public class Server extends AbstractPlayScreen{
 
                 for (DataOutputStream dataOutputStream : dataOutputStreams) {
 
-                        dataOutputStream.writeByte(FrameType.NEW_PLAYER);
-                        dataOutputStream.writeInt(iD);
+                    dataOutputStream.writeByte(FrameType.NEW_PLAYER);
+                    dataOutputStream.writeInt(ID);
 
                 }
 
-                players.put(iD, new Player(Server.this, iD) );
-                iDs.put(dataOutputStream, iD);
+                players.put(ID, new Player(Server.this) );
+                IDs.put(dataOutputStream, ID);
 
                 return true;
 
@@ -385,19 +427,19 @@ public class Server extends AbstractPlayScreen{
             synchronized (locker) {
 
                 float degrees = dataInputStream.readFloat();
-                players.get(iDs.get(dataOutputStream) ).bullets.add(new Bullet(players.get(iDs.get(dataOutputStream) ), degrees) );
+                players.get(IDs.get(dataOutputStream) ).bullets.add(new Bullet(players.get(IDs.get(dataOutputStream) ), degrees) );
 
                 for (DataOutputStream dataOutputStream : dataOutputStreams) {
 
                     dataOutputStream.writeByte(FrameType.PLAYER_SHOT);
-                    dataOutputStream.writeInt(iD);
+                    dataOutputStream.writeInt(ID);
                     dataOutputStream.writeFloat(degrees);
 
                 }
 
-                return true;
-
             }
+
+            return true;
 
         }
 

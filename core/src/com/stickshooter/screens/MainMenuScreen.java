@@ -1,63 +1,34 @@
 package com.stickshooter.screens;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
-import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.badlogic.gdx.utils.viewport.Viewport;
 import com.stickshooter.PixClient;
-import com.stickshooter.tools.FTFontGenerator;
+import com.stickshooter.prototypes.AbstractMenuScreen;
 
 /**
  * Created by Marian on 12.03.2016.
  */
-public class MainMenuScreen implements Screen {
+public class MainMenuScreen extends AbstractMenuScreen {
 
-    /*TODO:
-    * -obsługa klawiatury
-     */
-
-    private PixClient game;
-
-    private OrthographicCamera gamecam;
-    private Viewport gameViewport;
-
-    private Stage stage;
     private Table table;
     private Table sign;
+
     private Label.LabelStyle labelStyle;
     private Label.LabelStyle authorStyle;
 
-    //przyciski
     private TextButton playButton;
-    private TextButton optionsButton;
     private TextButton galleryButton;
     private TextButton exitButton;
     private TextButton.TextButtonStyle textButtonStyle;
 
-    //generator Bitmap font
-    private FTFontGenerator generator;
-
-
-
     public MainMenuScreen(PixClient game) {
 
+        super(game);
         this.game = game;
-
-        //kamera
-        gamecam = new OrthographicCamera();
-        gameViewport = new FitViewport(PixClient.V_WIDTH, PixClient.V_HEIGHT, gamecam);
-        gamecam.position.set(gameViewport.getWorldWidth()/2, gameViewport.getWorldHeight()/2, 0);
-
-        //generowanie fontu bitmap
-        generator = new FTFontGenerator(game.manager);
 
         textButtonStyle = new TextButton.TextButtonStyle();
         textButtonStyle.font = generator.generateFont(PixClient.MENU_FONT, 75);
@@ -70,13 +41,10 @@ public class MainMenuScreen implements Screen {
         authorStyle = new Label.LabelStyle();
         authorStyle.font = generator.generateFont(PixClient.SIGN_FONT, 45);
 
-        //tworzenie przycisków
         playButton = new TextButton("PLAY", textButtonStyle);
-        optionsButton = new TextButton("OPTIONS", textButtonStyle);
         galleryButton = new TextButton("GALLERY", textButtonStyle);
         exitButton = new TextButton("EXIT", textButtonStyle);
 
-        //układam elementy w kontenerze
         table = new Table();
         table.debug();
         table.top().padTop(50);
@@ -85,8 +53,6 @@ public class MainMenuScreen implements Screen {
         table.row().padTop(100);
             Table subTable = new Table();
             subTable.add(playButton);
-            subTable.row();
-            subTable.add(optionsButton);
             subTable.row();
             subTable.add(galleryButton);
             subTable.row();
@@ -99,9 +65,6 @@ public class MainMenuScreen implements Screen {
         sign.setFillParent(true);
         sign.add(new Label("by: Marcin Slupek", authorStyle));
 
-
-        //dodajemy elementy na scenę
-        stage = new Stage(gameViewport, game.batch);
         stage.addActor(table);
         stage.addActor(sign);
 
@@ -109,10 +72,6 @@ public class MainMenuScreen implements Screen {
         Gdx.input.setInputProcessor(stage);
         playButton.addListener(new ClickListener());
         exitButton.addListener(new ClickListener());
-        optionsButton.addListener(new ClickListener());
-
-
-
 
     }
 
@@ -125,31 +84,17 @@ public class MainMenuScreen implements Screen {
     @Override
     public void render(float delta) {
 
+        super.render(delta);
 
-        Gdx.gl.glClearColor(0, 0, 0, 1);
-        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+        if(playButton.isPressed() ) {
 
-        stage.draw();
-        stage.act();
-
-        if(playButton.isPressed()) {
-
-            game.setScreen(new PlayScreen(game));
-            dispose();
-
-        }
-
-        if(optionsButton.isPressed()) {
-
-            game.setScreen(new OptionsScreen(game));
-            dispose();
+            game.setScreen(new ConnectScreen(game) );
 
         }
 
         if(galleryButton.isPressed()) {
 
-            game.setScreen(new GalleryScreen(game));
-            dispose();
+            game.setScreen(new GalleryScreen(game) );
 
         }
 
@@ -163,9 +108,7 @@ public class MainMenuScreen implements Screen {
 
     @Override
     public void resize(int width, int height) {
-
-        gameViewport.update(width, height);
-
+        super.resize(width,height);
     }
 
     @Override
@@ -185,7 +128,6 @@ public class MainMenuScreen implements Screen {
 
     @Override
     public void dispose() {
-        generator.dispose();
-        stage.dispose();
+        super.dispose();
     }
 }

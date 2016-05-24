@@ -8,7 +8,6 @@ import java.util.regex.Pattern;
  */
 public class PatternMatcher {
 
-    private String string;
     private Pattern pattern;
     private Matcher matcher;
 

@@ -13,5 +13,7 @@ public class FrameType {
     public static final int NEW_PLAYER = 5;
     public static final int PLAYER_LEFT = 6;
     public static final int PLAYER_SHOT = 7;
+    public static final int PLAYER_DIED = 8;
+    public static final int PLAYER_RESPAWN = 9;
 
 }

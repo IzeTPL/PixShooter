@@ -32,6 +32,7 @@ public abstract class AbstractGame extends Game{
     public static final short BULLET_BIT = 32;
     public static final short HEAD_BIT = 64;
     public static final short OBJECT_BIT = 128;
+    public static final short CLIENT_BIT = 256;
     //fonty
     public AssetManager manager = new AssetManager();
     public static final String MENU_FONT = "Capture_it.ttf";

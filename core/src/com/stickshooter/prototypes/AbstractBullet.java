@@ -1,11 +1,9 @@
 package com.stickshooter.prototypes;
 
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.physics.box2d.*;
 import com.badlogic.gdx.utils.viewport.Viewport;
-import com.stickshooter.PixClient;
-import com.stickshooter.sprites.Player;
+import com.stickshooter.AbstractGame;
 
 /**
  * Created by Marian on 16.05.2016.
@@ -23,7 +21,7 @@ public abstract class AbstractBullet {
 
     protected boolean remove;
 
-    public AbstractBullet(AbstractPlayer player, float degrees) {
+    public AbstractBullet(AbstractPlayer player) {
 
         this.player = player;
         this.world = player.getWorld();
@@ -45,12 +43,12 @@ public abstract class AbstractBullet {
 
         FixtureDef fdef = new FixtureDef();
         CircleShape shape = new CircleShape();
-        shape.setRadius(PixClient.downScale(3f));
+        shape.setRadius(AbstractGame.downScale(1f));
 
         fdef.shape = shape;
         fdef.isSensor = true;
-        fdef.filter.categoryBits = PixClient.BULLET_BIT;
-        fdef.filter.maskBits = PixClient.DEFAULT_BIT | PixClient.BRICK_BIT | PixClient.OBJECT_BIT;
+        fdef.filter.categoryBits = AbstractGame.BULLET_BIT;
+        fdef.filter.maskBits = AbstractGame.DEFAULT_BIT | AbstractGame.BRICK_BIT | AbstractGame.OBJECT_BIT | AbstractGame.CLIENT_BIT;
         body.createFixture(fdef).setUserData(this);
 
     }
@@ -75,5 +73,7 @@ public abstract class AbstractBullet {
     public World getWorld() {
         return world;
     }
+
+    public AbstractPlayer getPlayer() { return player; }
 
 }

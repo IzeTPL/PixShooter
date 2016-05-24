@@ -1,5 +1,7 @@
 package com.stickshooter.database;
 
+import com.badlogic.gdx.Gdx;
+
 import java.sql.*;
 
 /**
@@ -7,26 +9,30 @@ import java.sql.*;
  */
 public class DatabaseClient {
 
-        private Connection conn = null;
+    private Connection conn = null;
     private PreparedStatement stmt = null;
     private ResultSet rs = null;
 
-        public void connect() {
+    public void connect() {
+        try {
+            Class.forName("com.mysql.jdbc.Driver").newInstance();
+            conn = DriverManager.getConnection("jdbc:mysql://mysql.agh.edu.pl:3306/izet", "izet", "FH3SmbW0");
+        } catch (SQLException e) {
+            System.out.println("SQLException: " + e.getMessage());
+            System.out.println("SQLState: " + e.getSQLState());
+            System.out.println("VendorError: " + e.getErrorCode());
+        } catch (Exception e) {
             try {
-                Class.forName("com.mysql.jdbc.Driver").newInstance();
-
-                conn = DriverManager.getConnection("jdbc:mysql://mysql.agh.edu.pl:3306/izet", "izet", "FH3SmbW0");
-
-
+                conn.close();
+                stmt.close();
+                rs.close();
             } catch (SQLException ex) {
-                // handle any errors
-                System.out.println("SQLException: " + ex.getMessage());
-                System.out.println("SQLState: " + ex.getSQLState());
-                System.out.println("VendorError: " + ex.getErrorCode());
-            } catch (Exception e) {
-                e.printStackTrace();
+
+                Gdx.app.exit();
+
             }
         }
+    }
 
     public boolean verifyUser(String username, String password){
         try {
@@ -52,6 +58,16 @@ public class DatabaseClient {
             System.out.println("SQLException: " + ex.getMessage());
             System.out.println("SQLState: " + ex.getSQLState());
             System.out.println("VendorError: " + ex.getErrorCode());
+
+            try {
+                conn.close();
+                stmt.close();
+                rs.close();
+            } catch (SQLException e) {
+
+                Gdx.app.exit();
+
+            }
 
         }finally {
             if (rs != null) {

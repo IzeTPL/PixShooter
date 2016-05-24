@@ -10,8 +10,8 @@ public class Bullet extends AbstractBullet {
 
     public Bullet(Player player, float degrees) {
 
-        super(player, degrees);
-        body.setLinearVelocity(new Vector2(1f, 1f).setAngle(degrees));
+        super(player);
+        body.setLinearVelocity(new Vector2(2f, 2f).setAngle(degrees));
 
     }
 

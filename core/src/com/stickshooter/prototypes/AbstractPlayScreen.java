@@ -30,17 +30,18 @@ public abstract class AbstractPlayScreen extends AbstractScreen{
 
     public AbstractPlayScreen(AbstractGame game) {
 
+        super(game);
         this.game = game;
-        gamecam = new OrthographicCamera();
+        orthographicCamera = new OrthographicCamera();
 
-        gameViewport = new FitViewport(AbstractGame.downScale(AbstractGame.V_WIDTH/ AbstractGame.SCALE), AbstractGame.downScale(AbstractGame.V_HEIGHT / AbstractGame.SCALE), gamecam);
+        gameViewport = new FitViewport(AbstractGame.downScale(AbstractGame.V_WIDTH / AbstractGame.SCALE), AbstractGame.downScale(AbstractGame.V_HEIGHT / AbstractGame.SCALE), orthographicCamera);
 
         mapLoader = new TmxMapLoader();
         map = mapLoader.load("level1.tmx");
         mapProperties = new MapProperties();
         mapProperties = map.getProperties();
         renderer = new OrthogonalTiledMapRenderer(map, 1f/ AbstractGame.PIXELS_PER_METER);
-        gamecam.position.set(gameViewport.getWorldWidth()/2, gameViewport.getWorldHeight()/2, 0);
+        orthographicCamera.position.set(gameViewport.getWorldWidth()/2, gameViewport.getWorldHeight()/2, 0);
 
 
         world = new World(new Vector2(0, -10f), true);
@@ -60,8 +61,8 @@ public abstract class AbstractPlayScreen extends AbstractScreen{
     public void update(float delta) {
 
         world.step(1/60f, 6, 2);
-        gamecam.update();
-        renderer.setView(gamecam);
+        orthographicCamera.update();
+        renderer.setView(orthographicCamera);
 
     }
 
@@ -71,8 +72,8 @@ public abstract class AbstractPlayScreen extends AbstractScreen{
 
         super.render(delta);
         renderer.render();
-        b2dr.render(world, gamecam.combined);
-        game.batch.setProjectionMatrix(gamecam.combined);
+        b2dr.render(world, orthographicCamera.combined);
+        game.batch.setProjectionMatrix(orthographicCamera.combined);
 
     }
 

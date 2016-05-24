@@ -13,10 +13,13 @@ import com.stickshooter.AbstractGame;
 public abstract class AbstractScreen implements Screen {
 
     protected AbstractGame game;
-    protected OrthographicCamera gamecam;
+    protected OrthographicCamera orthographicCamera;
     protected Viewport gameViewport;
 
-    public AbstractScreen() {
+    public AbstractScreen(AbstractGame game) {
+
+        this.game = game;
+        orthographicCamera = new OrthographicCamera();
 
     }
 
@@ -60,8 +63,8 @@ public abstract class AbstractScreen implements Screen {
         game.dispose();
     }
 
-    public OrthographicCamera getGamecam() {
-        return gamecam;
+    public OrthographicCamera getOrthographicCamera() {
+        return orthographicCamera;
     }
 
     public Viewport getGameViewport() {

@@ -4,13 +4,11 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.PixmapIO;
-import com.badlogic.gdx.graphics.g2d.ParticleEffect;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.BufferUtils;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.stickshooter.AbstractGame;
 import com.stickshooter.PixClient;
 import com.stickshooter.networking.FrameType;
 import com.stickshooter.networking.MovementType;
@@ -39,8 +37,6 @@ public class PlayScreen extends AbstractPlayScreen{
     private PixClient game;
     private TextureAtlas atlas;
     private boolean isPaused = false;
-    private boolean isMultiplayer = false;
-    private ShapeRenderer shapeRenderer;
 
     //tworzenie screenshotów
     byte[] pixels;
@@ -51,15 +47,16 @@ public class PlayScreen extends AbstractPlayScreen{
     private PauseMenu pauseMenu;
 
     private Client client;
-    private HashSet<Integer> iDs;
+    private HashSet<Integer> IDs;
     private HashMap<Integer, Player> players;
-    private Player player;
+    private ShapeRenderer shapeRenderer;
 
-    SimpleDateFormat simpleDateFormat;
+    private SimpleDateFormat simpleDateFormat;
 
-    public PlayScreen(AbstractGame game) {
+    public PlayScreen(PixClient game, String nickname, String host, int port) {
 
         super(game);
+        this.game = game;
         simpleDateFormat = new SimpleDateFormat ("E_yyyy.MM.dd_'at'_hh-mm-ss_a_zzz");
 
         shapeRenderer = new ShapeRenderer();
@@ -67,19 +64,18 @@ public class PlayScreen extends AbstractPlayScreen{
 
         client = new Client();
 
-        this.game = (PixClient) game;
-
         hud = new Hud(game.batch);
         pauseMenu = new PauseMenu(game.batch, game.manager);
 
-        iDs = new HashSet<>();
+        IDs = new HashSet<>();
 
         debugOverlay = new DebugOverlay(game.batch);
         players = new HashMap<>();
 
-        client.connect("Player");
-
-       //player = new Player(this);
+        client.nickname = nickname;
+        client.host = host;
+        client.port = port;
+        client.connect();
 
     }
 
@@ -93,47 +89,42 @@ public class PlayScreen extends AbstractPlayScreen{
 
         super.update(dt);
 
-        if (players.get(client.userId).body.getPosition().x > gameViewport.getWorldWidth()/2f && players.get(client.userId).body.getPosition().x < PixClient.downScale(PixClient.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldWidth()/2f)
-            gamecam.position.x = players.get(client.userId).body.getPosition().x;
+        if(!client.connected)game.setScreen(new ConnectScreen(game));
 
-        if (players.get(client.userId).body.getPosition().y > gameViewport.getWorldHeight()/2f && players.get(client.userId).body.getPosition().y < PixClient.downScale(PixClient.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldHeight()/2f)
-            gamecam.position.y = players.get(client.userId).body.getPosition().y;
+        if (players.get(client.ID).body.getPosition().x > gameViewport.getWorldWidth()/2f && players.get(client.ID).body.getPosition().x < PixClient.downScale(PixClient.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldWidth()/2f)
+            orthographicCamera.position.x = players.get(client.ID).body.getPosition().x;
 
-        for (Integer iD : iDs) {
+        if (players.get(client.ID).body.getPosition().y > gameViewport.getWorldHeight()/2f && players.get(client.ID).body.getPosition().y < PixClient.downScale(PixClient.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldHeight()/2f)
+            orthographicCamera.position.y = players.get(client.ID).body.getPosition().y;
 
-            players.get(iD).update(dt);
+        for (Integer ID : IDs) {
+
+            players.get(ID).update(dt);
+
+            if(players.get(ID).shouldRemove() ) {
+
+                players.get(ID).getWorld().destroyBody(players.get(ID).body);
+                players.get(ID).reset();
+
+            }
 
         }
 
-        debugOverlay.update(players.get(client.userId), gameViewport, gamecam);
+        for (Integer ID : IDs) {
 
-        try {
-            handleInput(dt);
-        } catch (IOException e) {}
+        for(int i = 0; i < players.get(ID).bullets.size(); i++) {
+            players.get(ID).bullets.get(i).update(dt);
+            if (players.get(ID).bullets.get(i).shouldRemove()) {
+                players.get(ID).bullets.get(i).getWorld().destroyBody(players.get(ID).bullets.get(i).body);
+                players.get(ID).bullets.remove(i);
+                i--;
+            }
+        }
 
+        }
 
+        debugOverlay.update(players.get(client.ID), gameViewport, orthographicCamera);
         toggleMenu(dt);
-
-        //player.update(dt);
-//
-        //if (player.body.getPosition().x > gameViewport.getWorldWidth()/2f && player.body.getPosition().x < PixClient.downScale(PixClient.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldWidth()/2f)
-        //    gamecam.position.x = player.body.getPosition().x;
-//
-        //if (player.body.getPosition().y > gameViewport.getWorldHeight()/2f && player.body.getPosition().y < PixClient.downScale(PixClient.TILE_SIZE * (float)mapProperties.get("width", Integer.class)) - gameViewport.getWorldHeight()/2f)
-        //    gamecam.position.y = player.body.getPosition().y;
-//
-        //debugOverlay.update(player, gameViewport, gamecam);
-//
-        //for(int i = 0; i < player.bullets.size(); i++) {
-        //    player.bullets.get(i).update(dt);
-        //    if(player.bullets.get(i).shouldRemove()) {
-        //        player.bullets.get(i).getWorld().destroyBody(player.bullets.get(i).body);
-        //        player.bullets.remove(i);
-        //        i--;
-        //    }
-        //}
-//
-        //hud.update(dt);
 
     }
 
@@ -145,31 +136,36 @@ public class PlayScreen extends AbstractPlayScreen{
 
         update(delta);
 
-        game.batch.begin();
+        try {
+            handleInput();
+        } catch (IOException e) {
 
-
-        for (Integer iD : iDs) {
-
-            players.get(iD).sprite.draw(game.batch);
+            client.closeObjects();
+            game.setScreen(new ConnectScreen(game));
 
         }
 
 
-        //player.sprite.draw(game.batch);
-        game.batch.end();
 
-        shapeRenderer.setProjectionMatrix(gamecam.combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0, 1, 0, 1);
 
-        //for(int i = 0; i < player.bullets.size(); i++) {
-        //    player.bullets.get(i).draw(gamecam.combined);
-        //}
+        for (Integer ID : IDs) {
 
-        shapeRenderer.end();
+            game.batch.begin();
+                players.get(ID).sprite.draw(game.batch);
+            game.batch.end();
+
+            for(int i = 0; i < players.get(ID).bullets.size(); i++) {
+                shapeRenderer.setProjectionMatrix(orthographicCamera.combined);
+                shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+                shapeRenderer.setColor(1, 1, 0, 1);
+                shapeRenderer.circle( players.get(ID).bullets.get(i).body.getPosition().x,  players.get(ID).bullets.get(i).body.getPosition().y, PixClient.downScale(1f), 100);
+                shapeRenderer.end();
+            }
+
+        }
 
         game.batch.setProjectionMatrix(hud.stage.getCamera().combined);
-        //hud.stage.draw();
+        hud.stage.draw();
         game.batch.setProjectionMatrix(pauseMenu.stage.getCamera().combined);
         pauseMenu.stage.act();
         pauseMenu.stage.draw();
@@ -191,12 +187,12 @@ public class PlayScreen extends AbstractPlayScreen{
 
     @Override
     public void pause() {
-        //players.get(client.userId).body.setActive(false);
+
     }
 
     @Override
     public void resume() {
-        //players.get(client.userId).body.setActive(true);
+
     }
 
     @Override
@@ -216,40 +212,30 @@ public class PlayScreen extends AbstractPlayScreen{
 
     public void updatePlayers(float dt) {
 
-            for (Integer iD : iDs) {
+        for (Integer ID : IDs) {
 
-                players.get(iD).body.setTransform(client.playersPosition.get(iD).x, client.playersPosition.get(iD).y, 0f);
-                players.get(iD).body.setLinearVelocity(client.playersVelocity.get(iD).x, client.playersVelocity.get(iD).y);
+            players.get(ID).body.setTransform(client.playersPosition.get(ID).x, client.playersPosition.get(ID).y, 0f);
+            players.get(ID).body.setLinearVelocity(client.playersVelocity.get(ID).x, client.playersVelocity.get(ID).y);
 
-            }
-
-            //for(int i = 0; i < player.bullets.size(); i++) {
-            //    player.bullets.get(i).update(dt);
-            //    if(player.bullets.get(i).shouldRemove()) {
-            //        player.bullets.get(i).getWorld().destroyBody(player.bullets.get(i).body);
-            //        player.bullets.remove(i);
-            //        i--;
-            //    }
-            //}
-
+        }
 
     }
 
-    public void handleInput(float dt) throws IOException{
+    public void handleInput() throws IOException{
 
         if(!isPaused) {
 
-            if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && players.get(client.userId).body.getLinearVelocity().y == 0) {
+            if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && players.get(client.ID).body.getLinearVelocity().y == 0) {
                 client.jump();
 
             }
 
-            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && players.get(client.userId).body.getLinearVelocity().x <= 2f) {
+            if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && players.get(client.ID).body.getLinearVelocity().x <= 2f) {
                 client.moveRight();
 
             }
 
-            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && players.get(client.userId).body.getLinearVelocity().x >= -2f) {
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && players.get(client.ID).body.getLinearVelocity().x >= -2f) {
 
                 client.moveLeft();
 
@@ -263,48 +249,15 @@ public class PlayScreen extends AbstractPlayScreen{
 
             if (Gdx.input.justTouched()) {
 
-                client.shoot(new Vector2(PixClient.downScale( (2 * (float)Gdx.input.getX() - (float)Gdx.graphics.getWidth() ) / (2 * PixClient.SCALE) ) + ((gamecam.position.x - players.get(client.userId).body.getPosition().x) * ( (float)gameViewport.getScreenWidth() / PixClient.V_WIDTH) ), PixClient.downScale( ( (float)Gdx.graphics.getHeight() - 2 * (float)Gdx.input.getY() ) / (2 * PixClient.SCALE) ) + ((gamecam.position.y - players.get(client.userId).body.getPosition().y) * ( (float)gameViewport.getScreenHeight() / PixClient.V_HEIGHT) )).angle());
+                client.shoot();
 
             }
 
         }
 
-        //if(!isPaused) {
-//
-        //    if (Gdx.input.isKeyJustPressed(Input.Keys.UP) && player.body.getLinearVelocity().y == 0) {
-//
-        //        player.body.applyLinearImpulse(new Vector2(0, 4f), player.body.getWorldCenter(), true);
-//
-        //    }
-//
-        //    if (Gdx.input.isKeyPressed(Input.Keys.RIGHT) && player.body.getLinearVelocity().x <= 2f) {
-//
-        //        player.body.applyLinearImpulse(new Vector2(0.1f, 0), player.body.getWorldCenter(), true);
-//
-        //    }
-//
-        //    if (Gdx.input.isKeyPressed(Input.Keys.LEFT) && player.body.getLinearVelocity().x >= -2f) {
-//
-        //        player.body.applyLinearImpulse(new Vector2(-0.1f, 0), player.body.getWorldCenter(), true);
-//
-        //    }
-//
-        //    if (Gdx.input.isKeyJustPressed(Input.Keys.F10)) {
-//
-        //        takeScreenshot();
-//
-        //    }
-//
-        //    if (Gdx.input.justTouched()) {
-//
-        //        player.shoot();
-//
-        //    }
-//
-        //}
-
         if (pauseMenu.getMainMenuButton().isPressed() && pauseMenu.isVisible()) {
 
+            client.closeObjects();
             game.setScreen(new MainMenuScreen(game));
 
         }
@@ -317,7 +270,6 @@ public class PlayScreen extends AbstractPlayScreen{
 
             if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE) && !pauseMenu.isVisible()) {
 
-                if (!isMultiplayer) pause();
                 pauseMenu.show();
                 isPaused = true;
 
@@ -327,7 +279,6 @@ public class PlayScreen extends AbstractPlayScreen{
 
             if ((pauseMenu.getPlayButton().isPressed() || Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) && pauseMenu.isVisible()) {
 
-                if (!isMultiplayer) resume();
                 pauseMenu.hide();
                 isPaused = false;
 
@@ -363,12 +314,15 @@ public class PlayScreen extends AbstractPlayScreen{
         private boolean connected = false;
         private boolean looped = false;
 
-        private int userId;
-        private String userLogin;
+        private int ID;
         private Thread thread = null;
         private Object locker = new Object();
 
-        public boolean connect(String login) {
+        public String host = null;
+        public String nickname = null;
+        public int port;
+
+        public boolean connect() {
 
             if (this.connected) {
 
@@ -378,7 +332,7 @@ public class PlayScreen extends AbstractPlayScreen{
 
             try {
 
-                socket = new Socket("localhost", 1337);
+                socket = new Socket(host, port);
 
                 dataInputStream = new DataInputStream(socket.getInputStream());
                 dataOutputStream = new DataOutputStream(socket.getOutputStream());
@@ -387,15 +341,15 @@ public class PlayScreen extends AbstractPlayScreen{
 
                 if (dataInputStream.readBoolean() ) {
 
-                    userId = dataInputStream.readInt();
-                    iDs.add(userId);
+                    ID = dataInputStream.readInt();
+                    IDs.add(ID);
 
                     int size = dataInputStream.readInt();
 
                     for(int i = 0; i < size; i++) {
 
                         int iD = dataInputStream.readInt();
-                        iDs.add(iD);
+                        IDs.add(iD);
                         players.put(iD, new Player(PlayScreen.this) );
 
                     }
@@ -410,12 +364,15 @@ public class PlayScreen extends AbstractPlayScreen{
                 } else {
 
                     closeObjects();
+                    game.setScreen(new ConnectScreen(game));
 
                 }
 
             } catch (IOException e) {
 
-                e.printStackTrace();
+                closeObjects();
+                game.setScreen(new ConnectScreen(game));
+
 
             }
 
@@ -427,11 +384,10 @@ public class PlayScreen extends AbstractPlayScreen{
 
             thread = new Thread( () -> {
 
-                boolean error = false;
 
                 try {
 
-                    while ( looped || true ) {
+                    while ( looped ) {
 
                         interpretFrame();
 
@@ -439,7 +395,9 @@ public class PlayScreen extends AbstractPlayScreen{
 
                 } catch (Exception e) {
 
-                    error = true;
+                    closeObjects();
+                    looped = false;
+                    connected = false;
 
                 } finally {
 
@@ -482,6 +440,14 @@ public class PlayScreen extends AbstractPlayScreen{
                     interpretPlayerShot();
                     break;
 
+                case FrameType.PLAYER_DIED:
+                    interpretPlayerDied();
+                    break;
+
+                case FrameType.PLAYER_RESPAWN:
+                    interpretPlayerRespawn();
+                    break;
+
                 default:
                     break;
 
@@ -495,28 +461,28 @@ public class PlayScreen extends AbstractPlayScreen{
             HashMap<Integer, Vector2> playersVelocity = new HashMap<>();
             int iD;
 
-                for(int i = 0; i < players.size(); i++) {
+            for(int i = 0; i < players.size(); i++) {
 
-                    Vector2 position = new Vector2();
-                    Vector2 velocity = new Vector2();
+                Vector2 position = new Vector2();
+                Vector2 velocity = new Vector2();
 
-                    synchronized (locker) {
-                        iD = dataInputStream.readInt();
+                synchronized (locker) {
+                    iD = dataInputStream.readInt();
 
-                        position.x = dataInputStream.readFloat();
-                        position.y = dataInputStream.readFloat();
+                    position.x = dataInputStream.readFloat();
+                    position.y = dataInputStream.readFloat();
 
-                        velocity.x = dataInputStream.readFloat();
-                        velocity.y = dataInputStream.readFloat();
-                    }
-
-                    playersVelocity.put(iD, velocity);
-                    playersPosition.put(iD, position);
-
+                    velocity.x = dataInputStream.readFloat();
+                    velocity.y = dataInputStream.readFloat();
                 }
 
-                this.playersPosition = playersPosition;
-                this.playersVelocity = playersVelocity;
+                playersVelocity.put(iD, velocity);
+                playersPosition.put(iD, position);
+
+            }
+
+            this.playersPosition = playersPosition;
+            this.playersVelocity = playersVelocity;
 
             updatePlayers(Gdx.graphics.getDeltaTime());
 
@@ -532,7 +498,7 @@ public class PlayScreen extends AbstractPlayScreen{
 
                     int iD = dataInputStream.readInt();
                     players.put(iD, new Player(PlayScreen.this) );
-                    iDs.add(iD);
+                    IDs.add(iD);
 
                 }
 
@@ -545,7 +511,7 @@ public class PlayScreen extends AbstractPlayScreen{
 
                 int iD = dataInputStream.readInt();
                 players.put(iD, new Player(PlayScreen.this) );
-                iDs.add(iD);
+                IDs.add(iD);
 
 
             }
@@ -557,8 +523,9 @@ public class PlayScreen extends AbstractPlayScreen{
             synchronized (locker) {
 
                 int iD = dataInputStream.readInt();
+                players.get(iD).setDead();
                 players.remove(iD);
-                iDs.remove(iD);
+                IDs.remove(iD);
 
             }
 
@@ -574,6 +541,32 @@ public class PlayScreen extends AbstractPlayScreen{
                 iD = dataInputStream.readInt();
                 degrees = dataInputStream.readFloat();
                 players.get(iD).bullets.add(new Bullet(players.get(iD), degrees) );
+
+            }
+
+        }
+
+        private void interpretPlayerDied() throws IOException {
+
+            int iD;
+
+            synchronized (locker) {
+
+                iD = dataInputStream.readInt();
+                players.get(iD).setDead();
+
+            }
+
+        }
+
+        private void interpretPlayerRespawn() throws IOException {
+
+            int iD;
+
+            synchronized (locker) {
+
+                iD = dataInputStream.readInt();
+                players.get(iD).setToRespawn();
 
             }
 
@@ -612,10 +605,11 @@ public class PlayScreen extends AbstractPlayScreen{
 
         }
 
-        public void shoot(float degrees) throws  IOException {
+        public void shoot() throws  IOException {
 
             synchronized (locker) {
 
+                float degrees = new Vector2(PixClient.downScale( (2 * (float)Gdx.input.getX() - (float)Gdx.graphics.getWidth() ) / (2 * PixClient.SCALE) ) + ((orthographicCamera.position.x - players.get(client.ID).body.getPosition().x) * ( (float)gameViewport.getScreenWidth() / PixClient.V_WIDTH) ), PixClient.downScale( ( (float)Gdx.graphics.getHeight() - 2 * (float)Gdx.input.getY() ) / (2 * PixClient.SCALE) ) + ((orthographicCamera.position.y - players.get(client.ID).body.getPosition().y) * ( (float)gameViewport.getScreenHeight() / PixClient.V_HEIGHT) )).angle();
                 dataOutputStream.writeByte(FrameType.SHOOT);
                 dataOutputStream.writeFloat(degrees);
 
@@ -628,6 +622,7 @@ public class PlayScreen extends AbstractPlayScreen{
 
             closeObject(dataOutputStream);
             closeObject(dataInputStream);
+            closeObject(socket);
 
         }
 
@@ -641,12 +636,12 @@ public class PlayScreen extends AbstractPlayScreen{
 
             try {
 
-                    object.close();
-                    return true;
+                object.close();
+                return true;
 
             } catch (IOException e) {
 
-                    return false;
+                return false;
 
             }
 
