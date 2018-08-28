@@ -43,3 +43,4 @@
 - utworzenie logiki obsługi myszy - wystrzeliwanie pocisków w kierunku kursora GOTOWE 5.04.2016 -----------------------------
 - kolizja pocisk - gracz, śmierć gracza i jego odrodzenie 5.04.2016 GOTOWE ------------------------------
 - zastosowanie polimorfizmu, klas abstrakcyjnych w celu ujednolicenia kodu 5.04.2016 GOTOWE ------------------
+ELO
